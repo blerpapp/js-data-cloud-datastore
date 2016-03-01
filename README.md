@@ -42,7 +42,7 @@ const adapter = new CloudDatastoreAdapter()
 // Mappers in "store" will use the CloudDatastore adapter by default
 store.registerAdapter('datastore', adapter, { default: true })
 
-// Create a Mapper that maps to a "user" table
+// Create a Mapper that maps to a "user" kind
 store.defineMapper('user')
 ```
 
