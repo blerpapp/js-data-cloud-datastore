@@ -1,0 +1,7 @@
+node_modules/
+doc/
+src/
+junit/
+mocha.start.js
+.gitub/
+rollup.config.js
