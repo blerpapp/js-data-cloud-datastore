@@ -79,7 +79,7 @@ async function findAllAdminUsers () {
 
 Apache Version 2.0
 
-Copyright (c) 2014-2016 js-data-cloud-datastore project authors
+Copyright (c) 2016 js-data-cloud-datastore project authors
 
 * [LICENSE](https://github.com/GoogleCloudPlatform/js-data-cloud-datastore/blob/master/LICENSE)
 * [AUTHORS](https://github.com/GoogleCloudPlatform/js-data-cloud-datastore/blob/master/AUTHORS)
