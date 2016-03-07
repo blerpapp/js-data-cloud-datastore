@@ -1,7 +1,7 @@
 {
   "name": "js-data-cloud-datastore",
   "description": "Google Cloud Datastore adapter for js-data.",
-  "version": "1.0.0-alpha.1",
+  "version": "1.0.0-alpha.2",
   "homepage": "https://github.com/GoogleCloudPlatform/js-data-cloud-datastore",
   "license": "Apache Version 2.0",
   "author": "js-data-cloud-datastore project authors",
@@ -24,12 +24,13 @@
   "scripts": {
     "doc": "jsdoc -c conf.json src && node scripts/cleanup.js",
     "bundle": "rollup -c rollup.config.js -f cjs -o dist/js-data-cloud-datastore.js -m dist/js-data-cloud-datastore.js.map src/index.js",
-    "lint": "semistandard src/index.js mocha.start.js scripts/*.js test/**/*.js",
+    "lint": "semistandard src/index.js mocha.start.js scripts/*.js test/**/*.js rollup.config.js",
     "build": "npm run lint && npm run bundle",
     "mocha": "mocha -t 30000 -R dot -r source-map-support/register mocha.start.js",
     "cover": "istanbul cover --hook-run-in-context node_modules/mocha/bin/_mocha -- -t 30000 -R dot -r source-map-support/register mocha.start.js",
     "test": "npm run build && npm run cover",
-    "release": "npm test && npm run doc",
+    "repo-tools": "repo-tools updates && repo-tools changelog",
+    "release": "npm test && npm run doc && npm run repo-tools",
     "ci": "npm run test && cat coverage/lcov.info | coveralls || true && cat ./coverage/lcov.info | codacy-coverage || true"
   },
   "semistandard": {
@@ -46,23 +47,24 @@
     ]
   },
   "dependencies": {
-    "mout": "0.11.1"
+    "js-data-adapter": "0.1.3",
+    "mout": "0.12.0"
   },
   "peerDependencies": {
     "gcloud": "^0.28.0",
-    "js-data": "^3.0.0-alpha.15"
+    "js-data": "^3.0.0-alpha.16"
   },
   "devDependencies": {
-    "babel-core": "6.5.2",
-    "babel-eslint": "5.0.0",
-    "babel-polyfill": "6.5.0",
+    "babel-core": "6.6.5",
+    "babel-polyfill": "6.6.1",
     "babel-preset-es2015-rollup": "1.1.1",
     "chai": "3.5.0",
     "codacy-coverage": "1.1.3",
     "coveralls": "2.11.8",
     "ink-docstrap": "1.1.4",
     "istanbul": "0.4.2",
-    "js-data-adapter-tests": "^2.0.0-alpha.12",
+    "js-data-adapter-tests": "^2.0.0-alpha.14",
+    "js-data-repo-tools": "0.2.0",
     "jsdoc": "3.4.0",
     "mocha": "2.4.5",
     "rollup": "0.25.4",

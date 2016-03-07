@@ -1,4 +1,4 @@
-var babel = require('rollup-plugin-babel')
+var babel = require('rollup-plugin-babel');
 
 module.exports = {
   plugins: [
@@ -6,4 +6,4 @@ module.exports = {
       exclude: 'node_modules/**'
     })
   ]
-}
+};

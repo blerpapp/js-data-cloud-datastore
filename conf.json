@@ -18,6 +18,6 @@
     "outputSourceFiles": true,
     "syntaxTheme": "dark",
     "linenums": true,
-    "footer": "<div style=\"text-align:center\">Back to <a href=\"http://js-data.io\">js-data.io</a></div>"
+    "footer": "<div style=\"text-align:center\">Back to <a href=\"http://api.js-data.io\">api.js-data.io</a></div>"
   }
 }

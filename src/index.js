@@ -15,12 +15,17 @@
 'use strict';
 
 import {utils} from 'js-data';
-import unique from 'mout/array/unique';
+import Adapter from 'js-data-adapter';
+import {
+  reserved,
+  Response
+} from 'js-data-adapter';
 
 const {
   addHiddenPropsToTarget,
+  classCallCheck,
   deepMixIn,
-  fillIn,
+  extend,
   forEachRelation,
   forOwn,
   get,
@@ -28,65 +33,14 @@ const {
   isObject,
   isString,
   isUndefined,
+  omit,
   plainCopy,
   resolve,
   set
 } = utils;
 
-const reserved = [
-  'orderBy',
-  'sort',
-  'limit',
-  'offset',
-  'skip',
-  'where'
-];
-
-const noop = function (...args) {
-  const self = this;
-  const opts = args[args.length - 1];
-  self.dbg(opts.op, ...args);
-  return resolve();
-};
-
-const noop2 = function (...args) {
-  const self = this;
-  const opts = args[args.length - 2];
-  self.dbg(opts.op, ...args);
-  return resolve();
-};
-
 const withoutRelations = function (mapper, props) {
-  const relationFields = mapper.relationFields || [];
-
-  // Remove relations
-  const _props = {};
-  forOwn(props, function (value, key) {
-    if (relationFields.indexOf(key) === -1) {
-      _props[key] = value;
-    }
-  });
-  return _props;
-};
-
-const DEFAULTS = {
-  /**
-   * Whether to log debugging information.
-   *
-   * @name CloudDatastoreAdapter#debug
-   * @type {boolean}
-   * @default false
-   */
-  debug: false,
-
-  /**
-   * Whether to return a more detailed response object.
-   *
-   * @name CloudDatastoreAdapter#raw
-   * @type {boolean}
-   * @default false
-   */
-  raw: false
+  return omit(props, mapper.relationFields || []);
 };
 
 const equal = function (query, field, value) {
@@ -141,15 +95,16 @@ const OPERATORS = {
  * store.defineMapper('user')
  *
  * @class CloudDatastoreAdapter
+ * @extends Adapter
  * @param {Object} [opts] Configuration opts.
  * @param {string} [opts.basePath=''] TODO
  * @param {boolean} [opts.debug=false] TODO
  */
 export default function CloudDatastoreAdapter (opts) {
   const self = this;
+  classCallCheck(self, CloudDatastoreAdapter);
   opts || (opts = {});
-  fillIn(opts, DEFAULTS);
-  fillIn(self, opts);
+  Adapter.call(self, opts);
 
   /**
    * Override the default predicate functions for specified operators.
@@ -179,123 +134,35 @@ export default function CloudDatastoreAdapter (opts) {
   self.dataset = self.gcloud.datastore.dataset();
 }
 
+// Setup prototype inheritance from Adapter
+CloudDatastoreAdapter.prototype = Object.create(Adapter.prototype, {
+  constructor: {
+    value: CloudDatastoreAdapter,
+    enumerable: false,
+    writable: true,
+    configurable: true
+  }
+});
+
+Object.defineProperty(CloudDatastoreAdapter, '__super__', {
+  configurable: true,
+  value: Adapter
+});
+
+/**
+ * Alternative to ES6 class syntax for extending `CloudDatastoreAdapter`.
+ *
+ * @name CloudDatastoreAdapter.extend
+ * @method
+ * @param {Object} [instanceProps] Properties that will be added to the
+ * prototype of the CloudDatastoreAdapter.
+ * @param {Object} [classProps] Properties that will be added as static
+ * properties to the CloudDatastoreAdapter itself.
+ * @return {Object} CloudDatastoreAdapter of `CloudDatastoreAdapter`.
+ */
+CloudDatastoreAdapter.extend = extend;
+
 addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
-  /**
-   * @name CloudDatastoreAdapter#afterCreate
-   * @method
-   */
-  afterCreate: noop2,
-
-  /**
-   * @name CloudDatastoreAdapter#afterCreateMany
-   * @method
-   */
-  afterCreateMany: noop2,
-
-  /**
-   * @name CloudDatastoreAdapter#afterDestroy
-   * @method
-   */
-  afterDestroy: noop2,
-
-  /**
-   * @name CloudDatastoreAdapter#afterDestroyAll
-   * @method
-   */
-  afterDestroyAll: noop2,
-
-  /**
-   * @name CloudDatastoreAdapter#afterFind
-   * @method
-   */
-  afterFind: noop2,
-
-  /**
-   * @name CloudDatastoreAdapter#afterFindAll
-   * @method
-   */
-  afterFindAll: noop2,
-
-  /**
-   * @name CloudDatastoreAdapter#afterUpdate
-   * @method
-   */
-  afterUpdate: noop2,
-
-  /**
-   * @name CloudDatastoreAdapter#afterUpdateAll
-   * @method
-   */
-  afterUpdateAll: noop2,
-
-  /**
-   * @name CloudDatastoreAdapter#afterUpdateMany
-   * @method
-   */
-  afterUpdateMany: noop2,
-
-  /**
-   * @name CloudDatastoreAdapter#beforeCreate
-   * @method
-   */
-  beforeCreate: noop,
-
-  /**
-   * @name CloudDatastoreAdapter#beforeCreateMany
-   * @method
-   */
-  beforeCreateMany: noop,
-
-  /**
-   * @name CloudDatastoreAdapter#beforeDestroy
-   * @method
-   */
-  beforeDestroy: noop,
-
-  /**
-   * @name CloudDatastoreAdapter#beforeDestroyAll
-   * @method
-   */
-  beforeDestroyAll: noop,
-
-  /**
-   * @name CloudDatastoreAdapter#beforeFind
-   * @method
-   */
-  beforeFind: noop,
-
-  /**
-   * @name CloudDatastoreAdapter#beforeFindAll
-   * @method
-   */
-  beforeFindAll: noop,
-
-  /**
-   * @name CloudDatastoreAdapter#beforeUpdate
-   * @method
-   */
-  beforeUpdate: noop,
-
-  /**
-   * @name CloudDatastoreAdapter#beforeUpdateAll
-   * @method
-   */
-  beforeUpdateAll: noop,
-
-  /**
-   * @name CloudDatastoreAdapter#beforeUpdateMany
-   * @method
-   */
-  beforeUpdateMany: noop,
-
-  /**
-   * @name CloudDatastoreAdapter#dbg
-   * @method
-   */
-  dbg (...args) {
-    this.log('debug', ...args);
-  },
-
   /**
    * Apply the specified selection query to the provided Datastore query.
    *
@@ -477,20 +344,19 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
     op = opts.op = 'beforeCreate';
     return resolve(self[op](mapper, props, opts)).then(function (_props) {
       // Allow for re-assignment from lifecycle hook
-      _props = isUndefined(_props) ? props : _props;
-      return self._create(mapper, _props, opts).then(function (result) {
-        let [apiResponse, record] = result;
-        apiResponse || (apiResponse = {});
-        apiResponse.data = record;
-        apiResponse.created = record ? 1 : 0;
-        apiResponse = self.getOpt('raw', opts) ? apiResponse : apiResponse.data;
+      props = isUndefined(_props) ? props : _props;
+      return self._create(mapper, props, opts);
+    }).then(function (result) {
+      let [apiResponse, record] = result;
+      let response = new Response(record, apiResponse, 'create');
+      response.created = record ? 1 : 0;
+      response = self.respond(response, opts);
 
-        // afterCreate lifecycle hook
-        op = opts.op = 'afterCreate';
-        return resolve(self[op](mapper, _props, opts, apiResponse)).then(function (_apiResponse) {
-          // Allow for re-assignment from lifecycle hook
-          return isUndefined(_apiResponse) ? apiResponse : _apiResponse;
-        });
+      // afterCreate lifecycle hook
+      op = opts.op = 'afterCreate';
+      return resolve(self[op](mapper, props, opts, response)).then(function (_response) {
+        // Allow for re-assignment from lifecycle hook
+        return isUndefined(_response) ? response : _response;
       });
     });
   },
@@ -517,21 +383,19 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
     op = opts.op = 'beforeCreateMany';
     return resolve(self[op](mapper, props, opts)).then(function (_props) {
       // Allow for re-assignment from lifecycle hook
-      _props = isUndefined(_props) ? props : _props;
-      return self._create(mapper, _props, opts).then(function (result) {
-        let [apiResponse, records] = result;
-        apiResponse || (apiResponse = {});
-        records || (records = []);
-        apiResponse.data = records;
-        apiResponse.created = records.length;
-        apiResponse = self.getOpt('raw', opts) ? apiResponse : apiResponse.data;
+      props = isUndefined(_props) ? props : _props;
+      return self._create(mapper, props, opts);
+    }).then(function (result) {
+      let [apiResponse, records] = result;
+      let response = new Response(records, apiResponse, 'createMany');
+      response.created = records.length;
+      response = self.respond(response, opts);
 
-        // afterCreateMany lifecycle hook
-        op = opts.op = 'afterCreateMany';
-        return resolve(self[op](mapper, _props, opts, apiResponse)).then(function (_apiResponse) {
-          // Allow for re-assignment from lifecycle hook
-          return isUndefined(_apiResponse) ? apiResponse : _apiResponse;
-        });
+      // afterCreateMany lifecycle hook
+      op = opts.op = 'afterCreateMany';
+      return resolve(self[op](mapper, props, opts, response)).then(function (_response) {
+        // Allow for re-assignment from lifecycle hook
+        return isUndefined(_response) ? response : _response;
       });
     });
   },
@@ -562,18 +426,14 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
         });
       });
     }).then(function (apiResponse) {
-      if (apiResponse && apiResponse.mutation_result && apiResponse.mutation_result.index_updates) {
-        apiResponse.deleted = 1;
-      } else {
-        apiResponse.deleted = 0;
-      }
-      apiResponse = self.getOpt('raw', opts) ? apiResponse : undefined;
+      let response = new Response(undefined, apiResponse, 'destroy');
+      response = self.respond(response, opts);
 
       // afterDestroy lifecycle hook
       op = opts.op = 'afterDestroy';
-      return resolve(self[op](mapper, id, opts, apiResponse)).then(function (_apiResponse) {
+      return resolve(self[op](mapper, id, opts, response)).then(function (_response) {
         // Allow for re-assignment from lifecycle hook
-        return isUndefined(_apiResponse) ? apiResponse : _apiResponse;
+        return isUndefined(_response) ? response : _response;
       });
     });
   },
@@ -601,18 +461,15 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
   destroyAll (mapper, query, opts) {
     const self = this;
     const idAttribute = mapper.idAttribute;
-    let op, deleted;
-    let records = [];
+    let op;
     query || (query = {});
     opts || (opts = {});
 
     // beforeDestroyAll lifecycle hook
     op = opts.op = 'beforeDestroyAll';
     return resolve(self[op](mapper, query, opts)).then(function () {
-      return self.findAll(mapper, query, { raw: false }).then(function (_records) {
-        records = _records;
+      return self.findAll(mapper, query, { raw: false }).then(function (records) {
         if (records.length) {
-          deleted = records.length;
           return new Promise(function (resolve, reject) {
             const keys = [];
             records.forEach(function (record) {
@@ -625,22 +482,18 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
               return err ? reject(err) : resolve(apiResponse);
             });
           });
-        } else {
-          deleted = 0;
         }
       });
     }).then(function (apiResponse) {
-      if (!apiResponse) {
-        apiResponse = {};
-      }
-      apiResponse.deleted = deleted;
-      apiResponse = self.getOpt('raw', opts) ? apiResponse : undefined;
+      apiResponse || (apiResponse = {});
+      let response = new Response(undefined, apiResponse, 'destroyAll');
+      response = self.respond(response, opts);
 
       // afterDestroyAll lifecycle hook
       op = opts.op = 'afterDestroyAll';
-      return self[op](mapper, query, opts, apiResponse).then(function (_apiResponse) {
+      return resolve(self[op](mapper, query, opts, response)).then(function (_response) {
         // Allow for re-assignment from lifecycle hook
-        return isUndefined(_apiResponse) ? apiResponse : _apiResponse;
+        return isUndefined(_response) ? response : _response;
       });
     });
   },
@@ -679,40 +532,20 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
         const tasks = [];
 
         forEachRelation(mapper, opts, function (def, __opts) {
-          const relatedMapper = def.getRelation();
           let task;
 
-          if ((def.type === 'hasOne' || def.type === 'hasMany') && def.foreignKey) {
-            task = self.findAll(relatedMapper, {
-              [def.foreignKey]: get(record, mapper.idAttribute)
-            }, __opts).then(function (relatedItems) {
-              if (def.type === 'hasOne' && relatedItems.length) {
-                set(record, def.localField, relatedItems[0]);
-              } else {
-                set(record, def.localField, relatedItems);
-              }
-              return relatedItems;
-            });
+          if (def.foreignKey && (def.type === 'hasOne' || def.type === 'hasMany')) {
+            if (def.type === 'hasOne') {
+              task = self.loadHasOne(mapper, def, record, __opts);
+            } else {
+              task = self.loadHasMany(mapper, def, record, __opts);
+            }
           } else if (def.type === 'hasMany' && def.localKeys) {
-            let localKeys = [];
-            let itemKeys = get(record, def.localKeys) || [];
-            itemKeys = Array.isArray(itemKeys) ? itemKeys : Object.keys(itemKeys);
-            localKeys = localKeys.concat(itemKeys || []);
-            task = self.findAll(relatedMapper, {
-              where: {
-                [relatedMapper.idAttribute]: {
-                  'in': unique(localKeys).filter(function (x) { return x; })
-                }
-              }
-            }, __opts).then(function (relatedItems) {
-              set(record, def.localField, relatedItems);
-              return relatedItems;
-            });
+            throw new Error('find with hasMany & localKeys not supported!');
+          } else if (def.type === 'hasMany' && def.foreignKeys) {
+            throw new Error('find with hasMany & foreignKeys not supported!');
           } else if (def.type === 'belongsTo') {
-            task = self.find(relatedMapper, get(record, def.foreignKey), __opts).then(function (relatedItem) {
-              set(record, def.localField, relatedItem);
-              return relatedItem;
-            });
+            task = self.loadBelongsTo(mapper, def, record, __opts);
           }
 
           if (task) {
@@ -723,17 +556,15 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
         return Promise.all(tasks);
       });
     }).then(function () {
-      let apiResponse = {
-        data: record,
-        found: record ? 1 : 0
-      };
-      apiResponse = self.getOpt('raw', opts) ? apiResponse : apiResponse.data;
+      let response = new Response(record, {}, 'find');
+      response.found = record ? 1 : 0;
+      response = self.respond(response, opts);
 
       // afterFind lifecycle hook
       op = opts.op = 'afterFind';
-      return resolve(self[op](mapper, id, opts, apiResponse)).then(function (_apiResponse) {
+      return resolve(self[op](mapper, id, opts, response)).then(function (_response) {
         // Allow for re-assignment from lifecycle hook
-        return isUndefined(_apiResponse) ? apiResponse : _apiResponse;
+        return isUndefined(_response) ? response : _response;
       });
     });
   },
@@ -781,79 +612,22 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
       }).then(function (_records) {
         records = _records;
         const tasks = [];
-        const idAttribute = mapper.idAttribute;
 
         forEachRelation(mapper, opts, function (def, __opts) {
-          const relatedMapper = def.getRelation();
           let task;
 
-          if ((def.type === 'hasOne' || def.type === 'hasMany') && def.foreignKey) {
-            task = Promise.all(records.map(function (item) {
-              return get(item, idAttribute);
-            }).filter(function (x) { return x; }).map(function (id) {
-              return self.findAll(relatedMapper, {
-                where: {
-                  [def.foreignKey]: id
-                }
-              }, __opts);
-            })).then(function (results) {
-              let relatedItems = [];
-              results.forEach(function (_relatedItems) {
-                relatedItems = relatedItems.concat(_relatedItems);
-              });
-              records.forEach(function (item) {
-                const attached = [];
-                relatedItems.forEach(function (relatedItem) {
-                  if (get(relatedItem, def.foreignKey) === get(item, idAttribute)) {
-                    attached.push(relatedItem);
-                  }
-                });
-                if (def.type === 'hasOne' && attached.length) {
-                  set(item, def.localField, attached[0]);
-                } else {
-                  set(item, def.localField, attached);
-                }
-              });
-              return relatedItems;
-            });
+          if (def.foreignKey && (def.type === 'hasOne' || def.type === 'hasMany')) {
+            if (def.type === 'hasMany') {
+              throw new Error('findAll with hasMany not supported!');
+            } else {
+              throw new Error('findAll with hasOne not supported!');
+            }
           } else if (def.type === 'hasMany' && def.localKeys) {
-            let localKeys = [];
-            records.forEach(function (item) {
-              let itemKeys = get(item, def.localKeys) || [];
-              itemKeys = Array.isArray(itemKeys) ? itemKeys : Object.keys(itemKeys);
-              localKeys = localKeys.concat(itemKeys || []);
-            });
-            task = Promise.all(unique(localKeys).filter(function (x) { return x; }).map(function (id) {
-              return self.find(relatedMapper, id, __opts);
-            })).then(function (relatedItems) {
-              records.forEach(function (item) {
-                const attached = [];
-                let itemKeys = get(item, def.localKeys) || [];
-                itemKeys = Array.isArray(itemKeys) ? itemKeys : Object.keys(itemKeys);
-                relatedItems.forEach(function (relatedItem) {
-                  if (itemKeys && itemKeys.indexOf(relatedItem[relatedMapper.idAttribute]) !== -1) {
-                    attached.push(relatedItem);
-                  }
-                });
-                set(item, def.localField, attached);
-              });
-              return relatedItems;
-            });
+            throw new Error('findAll with hasMany & localKeys not supported!');
+          } else if (def.type === 'hasMany' && def.localKeys) {
+            throw new Error('findAll with hasMany & foreignKeys not supported!');
           } else if (def.type === 'belongsTo') {
-            task = Promise.all(records.map(function (item) {
-              return get(item, def.foreignKey);
-            }).filter(function (x) { return x; }).map(function (id) {
-              return self.find(relatedMapper, id, __opts);
-            })).then(function (relatedItems) {
-              records.forEach(function (item) {
-                relatedItems.forEach(function (relatedItem) {
-                  if (relatedItem[relatedMapper.idAttribute] === get(item, def.foreignKey)) {
-                    set(item, def.localField, relatedItem);
-                  }
-                });
-              });
-              return relatedItems;
-            });
+            throw new Error('findAll with belongsTo not supported!');
           }
 
           if (task) {
@@ -864,17 +638,15 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
       });
     }).then(function () {
       records || (records = []);
-      let apiResponse = {
-        data: records,
-        found: records.length
-      };
-      apiResponse = self.getOpt('raw', opts) ? apiResponse : apiResponse.data;
+      let response = new Response(records, {}, 'findAll');
+      response.found = records.length;
+      response = self.respond(response, opts);
 
       // afterFindAll lifecycle hook
       op = opts.op = 'afterFindAll';
-      return resolve(self[op](mapper, query, opts, apiResponse)).then(function (_apiResponse) {
+      return resolve(self[op](mapper, query, opts, response)).then(function (_response) {
         // Allow for re-assignment from lifecycle hook
-        return isUndefined(_apiResponse) ? apiResponse : _apiResponse;
+        return isUndefined(_response) ? response : _response;
       });
     });
   },
@@ -912,43 +684,6 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
     opts.operators || (opts.operators = {});
     let ownOps = this.operators || {};
     return isUndefined(opts.operators[operator]) ? ownOps[operator] || OPERATORS[operator] : opts.operators[operator];
-  },
-
-  /**
-   * Resolve the value of the specified option based on the given options and
-   * this adapter's settings.
-   *
-   * @name CloudDatastoreAdapter#getOpt
-   * @method
-   * @param {string} opt The name of the option.
-   * @param {Object} [opts] Configuration options.
-   * @return {*} The value of the specified option.
-   */
-  getOpt (opt, opts) {
-    opts || (opts = {});
-    return isUndefined(opts[opt]) ? plainCopy(this[opt]) : plainCopy(opts[opt]);
-  },
-
-  /**
-   * Logging utility method.
-   *
-   * @name CloudDatastoreAdapter#log
-   * @method
-   */
-  log (level, ...args) {
-    if (level && !args.length) {
-      args.push(level);
-      level = 'debug';
-    }
-    if (level === 'debug' && !this.debug) {
-      return;
-    }
-    const prefix = `${level.toUpperCase()}: (CloudDatastoreAdapter)`;
-    if (console[level]) {
-      console[level](prefix, ...args);
-    } else {
-      console.log(prefix, ...args);
-    }
   },
 
   _update (mapper, records, props, opts) {
@@ -1027,16 +762,15 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
       });
     }).then(function (result) {
       let [apiResponse, record] = result;
-      apiResponse || (apiResponse = {});
-      apiResponse.data = record;
-      apiResponse.updated = 1;
-      apiResponse = self.getOpt('raw', opts) ? apiResponse : apiResponse.data;
+      let response = new Response(record, apiResponse, 'update');
+      response.updated = 1;
+      response = self.respond(response, opts);
 
       // afterUpdate lifecycle hook
       op = opts.op = 'afterUpdate';
-      return resolve(self[op](mapper, id, props, opts, apiResponse)).then(function (_apiResponse) {
+      return resolve(self[op](mapper, id, props, opts, response)).then(function (_response) {
         // Allow for re-assignment from lifecycle hook
-        return isUndefined(_apiResponse) ? apiResponse : _apiResponse;
+        return isUndefined(_response) ? response : _response;
       });
     });
   },
@@ -1082,15 +816,15 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
       let [apiResponse, records] = result;
       apiResponse || (apiResponse = {});
       records || (records = []);
-      apiResponse.data = records;
-      apiResponse.updated = records.length;
-      apiResponse = self.getOpt('raw', opts) ? apiResponse : apiResponse.data;
+      let response = new Response(records, apiResponse, 'updateAll');
+      response.updated = records.length;
+      response = self.respond(response, opts);
 
       // afterUpdateAll lifecycle hook
       op = opts.op = 'afterUpdateAll';
-      return resolve(self[op](mapper, props, query, opts, apiResponse)).then(function (_apiResponse) {
+      return resolve(self[op](mapper, props, query, opts, response)).then(function (_response) {
         // Allow for re-assignment from lifecycle hook
-        return isUndefined(_apiResponse) ? apiResponse : _apiResponse;
+        return isUndefined(_response) ? response : _response;
       });
     });
   },
@@ -1134,15 +868,15 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
       let [apiResponse, _records] = result;
       apiResponse || (apiResponse = {});
       _records || (_records = []);
-      apiResponse.data = _records;
-      apiResponse.updated = _records.length;
-      apiResponse = self.getOpt('raw', opts) ? apiResponse : apiResponse.data;
+      let response = new Response(_records, apiResponse, 'updateMany');
+      response.updated = response.data.length;
+      response = self.respond(response, opts);
 
       // afterUpdateMany lifecycle hook
       op = opts.op = 'afterUpdateMany';
-      return resolve(self[op](mapper, records, opts, apiResponse)).then(function (_apiResponse) {
+      return resolve(self[op](mapper, records, opts, response)).then(function (_response) {
         // Allow for re-assignment from lifecycle hook
-        return isUndefined(_apiResponse) ? apiResponse : _apiResponse;
+        return isUndefined(_response) ? response : _response;
       });
     });
   }

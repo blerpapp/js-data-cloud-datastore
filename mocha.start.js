@@ -33,15 +33,17 @@ JSDataAdapterTests.init({
   adapterConfig: {
     debug: false
   },
-  storeConfig: {
-    bypassCache: true,
-    linkRelations: false,
-    cacheResponse: false,
-    log: false,
-    debug: false
-  },
-  features: [
-    // 'findHasManyLocalKeys',
-    // 'findHasManyForeignKeys'
+  xfeatures: [
+    'findBelongsToNested',
+    'findBelongsToHasManyNested',
+    'findHasManyLocalKeys',
+    'findHasManyForeignKeys',
+    'findAllInOp',
+    'findAllLikeOp',
+    'findAllBelongsTo',
+    'findAllBelongsToNested',
+    'findAllBelongsToHasMany',
+    'findAllBelongsToHasManyNested',
+    'filterOnRelations'
   ]
 });
