@@ -17,8 +17,7 @@
 import {utils} from 'js-data';
 import Adapter from 'js-data-adapter';
 import {
-  reserved,
-  Response
+  reserved
 } from 'js-data-adapter';
 
 const {
@@ -26,7 +25,6 @@ const {
   classCallCheck,
   deepMixIn,
   extend,
-  forEachRelation,
   forOwn,
   get,
   isArray,
@@ -35,7 +33,6 @@ const {
   isUndefined,
   omit,
   plainCopy,
-  resolve,
   set
 } = utils;
 
@@ -46,6 +43,8 @@ const withoutRelations = function (mapper, props) {
 const equal = function (query, field, value) {
   return query.filter(field, '=', value);
 };
+
+const __super__ = Adapter.prototype;
 
 /**
  * Default predicate functions for the filtering operators.
@@ -209,7 +208,7 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
       }
     });
 
-    // Filter
+    // Apply filter
     if (Object.keys(query.where).length !== 0) {
       forOwn(query.where, function (criteria, field) {
         if (!isObject(criteria)) {
@@ -240,6 +239,7 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
       });
     }
 
+    // Apply sort
     if (query.orderBy) {
       if (isString(query.orderBy)) {
         query.orderBy = [
@@ -254,10 +254,12 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
       });
     }
 
+    // Apply skip/offset
     if (query.skip) {
       dsQuery = dsQuery.offset(+query.skip);
     }
 
+    // Apply limit
     if (query.limit) {
       dsQuery = dsQuery.limit(+query.limit);
     }
@@ -266,23 +268,24 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
   },
 
   /**
-   * Private method used by create and createMany.
-   * @name CloudDatastoreAdapter#create
+   * Internal method used by CloudDatastoreAdapter#_create and
+   * CloudDatastoreAdapter#_createMany.
+   *
+   * @name CloudDatastoreAdapter#_createHelper
    * @method
-   * @ignore
+   * @private
    * @param {Object} mapper The mapper.
    * @param {(Object|Object[])} records The record or records to be created.
-   * @param {Object} [opts] Configuration options.
    * @return {Promise}
    */
-  _create (mapper, records, opts) {
+  _createHelper (mapper, records) {
     const self = this;
     const singular = !isArray(records);
     if (singular) {
       records = [records];
     }
     return new Promise(function (resolve, reject) {
-      let cursor;
+      let apiResponse;
       const idAttribute = mapper.idAttribute;
       const incompleteKey = self.dataset.key([mapper.name]);
 
@@ -305,11 +308,11 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
             };
           });
           // Save records
-          self.dataset.save(entities, function (err, _cursor) {
+          self.dataset.save(entities, function (err, _apiResponse) {
             if (err) {
               return reject(err);
             }
-            cursor = _cursor;
+            apiResponse = _apiResponse;
             return done();
           });
         });
@@ -317,338 +320,312 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
         if (err) {
           return reject(err);
         }
-        return resolve([cursor, singular ? records[0] : records]);
+        return resolve([singular ? records[0] : records, apiResponse]);
       });
     });
   },
 
   /**
-   * Create a new record.
+   * Create a new record. Internal method used by Adapter#create.
    *
-   * @name CloudDatastoreAdapter#create
+   * @name CloudDatastoreAdapter#_create
    * @method
+   * @private
    * @param {Object} mapper The mapper.
    * @param {Object} props The record to be created.
    * @param {Object} [opts] Configuration options.
-   * @param {boolean} [opts.raw=false] Whether to return a more detailed
-   * response object.
    * @return {Promise}
    */
-  create (mapper, props, opts) {
-    const self = this;
-    let op;
-    props || (props = {});
-    opts || (opts = {});
-
-    // beforeCreate lifecycle hook
-    op = opts.op = 'beforeCreate';
-    return resolve(self[op](mapper, props, opts)).then(function (_props) {
-      // Allow for re-assignment from lifecycle hook
-      props = isUndefined(_props) ? props : _props;
-      return self._create(mapper, props, opts);
-    }).then(function (result) {
-      let [apiResponse, record] = result;
-      let response = new Response(record, apiResponse, 'create');
-      response.created = record ? 1 : 0;
-      response = self.respond(response, opts);
-
-      // afterCreate lifecycle hook
-      op = opts.op = 'afterCreate';
-      return resolve(self[op](mapper, props, opts, response)).then(function (_response) {
-        // Allow for re-assignment from lifecycle hook
-        return isUndefined(_response) ? response : _response;
-      });
-    });
+  _create (mapper, props, opts) {
+    return this._createHelper(mapper, props, opts);
   },
 
   /**
-   * Create multiple records in a single batch.
+   * Create multiple records in a single batch. Internal method used by
+   * Adapter#createMany.
    *
-   * @name CloudDatastoreAdapter#createMany
+   * @name CloudDatastoreAdapter#_createMany
    * @method
+   * @private
    * @param {Object} mapper The mapper.
-   * @param {Array} props Array of records to be created.
+   * @param {Object} props The records to be created.
    * @param {Object} [opts] Configuration options.
-   * @param {boolean} [opts.raw=false] Whether to return a more detailed
-   * response object.
    * @return {Promise}
    */
-  createMany (mapper, props, opts) {
-    const self = this;
-    let op;
-    props || (props = {});
-    opts || (opts = {});
-
-    // beforeCreateMany lifecycle hook
-    op = opts.op = 'beforeCreateMany';
-    return resolve(self[op](mapper, props, opts)).then(function (_props) {
-      // Allow for re-assignment from lifecycle hook
-      props = isUndefined(_props) ? props : _props;
-      return self._create(mapper, props, opts);
-    }).then(function (result) {
-      let [apiResponse, records] = result;
-      let response = new Response(records, apiResponse, 'createMany');
-      response.created = records.length;
-      response = self.respond(response, opts);
-
-      // afterCreateMany lifecycle hook
-      op = opts.op = 'afterCreateMany';
-      return resolve(self[op](mapper, props, opts, response)).then(function (_response) {
-        // Allow for re-assignment from lifecycle hook
-        return isUndefined(_response) ? response : _response;
-      });
-    });
+  _createMany (mapper, props, opts) {
+    return this._createHelper(mapper, props, opts);
   },
 
   /**
-   * Destroy the record with the given primary key.
+   * Destroy the record with the given primary key. Internal method used by
+   * Adapter#destroy.
    *
-   * @name CloudDatastoreAdapter#destroy
+   * @name CloudDatastoreAdapter#_destroy
    * @method
+   * @private
    * @param {Object} mapper The mapper.
    * @param {(string|number)} id Primary key of the record to destroy.
-   * @param {Object} [opts] Configuration options.
-   * @param {boolean} [opts.raw=false] Whether to return a more detailed
    * response object.
    * @return {Promise}
    */
-  destroy (mapper, id, opts) {
+  _destroy (mapper, id) {
     const self = this;
-    let op;
-    opts || (opts = {});
-
-    // beforeDestroy lifecycle hook
-    op = opts.op = 'beforeDestroy';
-    return resolve(self[op](mapper, id, opts)).then(function () {
-      return new Promise(function (resolve, reject) {
-        self.dataset.delete(self.dataset.key([mapper.name, id]), function (err, apiResponse) {
-          return err ? reject(err) : resolve(apiResponse);
-        });
-      });
-    }).then(function (apiResponse) {
-      let response = new Response(undefined, apiResponse, 'destroy');
-      response = self.respond(response, opts);
-
-      // afterDestroy lifecycle hook
-      op = opts.op = 'afterDestroy';
-      return resolve(self[op](mapper, id, opts, response)).then(function (_response) {
-        // Allow for re-assignment from lifecycle hook
-        return isUndefined(_response) ? response : _response;
+    return new Promise(function (resolve, reject) {
+      self.dataset.delete(self.dataset.key([mapper.name, id]), function (err, apiResponse) {
+        return err ? reject(err) : resolve([undefined, apiResponse]);
       });
     });
   },
 
   /**
-   * Destroy the records that match the selection `query`.
+   * Destroy the records that match the selection query. Internal method used by
+   * Adapter#destroyAll.
    *
-   * @name CloudDatastoreAdapter#destroyAll
+   * @name CloudDatastoreAdapter#_destroyAll
    * @method
-   * @param {Object} mapper The mapper.
+   * @private
+   * @param {Object} mapper the mapper.
    * @param {Object} [query] Selection query.
-   * @param {Object} [query.where] Filtering criteria.
-   * @param {string|Array} [query.orderBy] Sorting criteria.
-   * @param {string|Array} [query.sort] Same as `query.sort`.
-   * @param {number} [query.limit] Limit results.
-   * @param {number} [query.skip] Offset results.
-   * @param {number} [query.offset] Same as `query.skip`.
-   * @param {Object} [opts] Configuration options.
-   * @param {Object} [opts.operators] Override the default predicate functions
-   * for specified operators.
-   * @param {boolean} [opts.raw=false] Whether to return a more detailed
-   * response object.
    * @return {Promise}
    */
-  destroyAll (mapper, query, opts) {
+  _destroyAll (mapper, query) {
     const self = this;
-    const idAttribute = mapper.idAttribute;
-    let op;
-    query || (query = {});
-    opts || (opts = {});
 
-    // beforeDestroyAll lifecycle hook
-    op = opts.op = 'beforeDestroyAll';
-    return resolve(self[op](mapper, query, opts)).then(function () {
-      return self.findAll(mapper, query, { raw: false }).then(function (records) {
-        if (records.length) {
-          return new Promise(function (resolve, reject) {
-            const keys = [];
-            records.forEach(function (record) {
-              const id = get(record, idAttribute);
-              if (!isUndefined(id)) {
-                keys.push(self.dataset.key([mapper.name, id]));
-              }
-            });
-            self.dataset.delete(keys, function (err, apiResponse) {
-              return err ? reject(err) : resolve(apiResponse);
-            });
+    return self.findAll(mapper, query, { raw: false }).then(function (records) {
+      if (records.length) {
+        return new Promise(function (resolve, reject) {
+          const keys = [];
+          const idAttribute = mapper.idAttribute;
+          records.forEach(function (record) {
+            const id = get(record, idAttribute);
+            if (!isUndefined(id)) {
+              keys.push(self.dataset.key([mapper.name, id]));
+            }
           });
-        }
-      });
-    }).then(function (apiResponse) {
-      apiResponse || (apiResponse = {});
-      let response = new Response(undefined, apiResponse, 'destroyAll');
-      response = self.respond(response, opts);
-
-      // afterDestroyAll lifecycle hook
-      op = opts.op = 'afterDestroyAll';
-      return resolve(self[op](mapper, query, opts, response)).then(function (_response) {
-        // Allow for re-assignment from lifecycle hook
-        return isUndefined(_response) ? response : _response;
-      });
+          self.dataset.delete(keys, function (err, apiResponse) {
+            return err ? reject(err) : resolve([undefined, apiResponse]);
+          });
+        });
+      }
+      return [undefined, {}];
     });
   },
 
   /**
-   * Retrieve the record with the given primary key.
+   * Retrieve the record with the given primary key. Internal method used by
+   * Adapter#find.
    *
-   * @name CloudDatastoreAdapter#find
+   * @name CloudDatastoreAdapter#_find
    * @method
+   * @private
    * @param {Object} mapper The mapper.
    * @param {(string|number)} id Primary key of the record to retrieve.
    * @param {Object} [opts] Configuration options.
-   * @param {boolean} [opts.raw=false] Whether to return a more detailed
-   * response object.
-   * @param {string[]} [opts.with=[]] Relations to eager load.
    * @return {Promise}
    */
-  find (mapper, id, opts) {
+  _find (mapper, id, opts) {
     const self = this;
-    opts || (opts = {});
-    opts.with || (opts.with = []);
-    let op, record;
-    // beforeFind lifecycle hook
-    op = opts.op = 'beforeFind';
-    return resolve(self[op](mapper, id, opts)).then(function () {
-      return new Promise(function (resolve, reject) {
-        const key = self.dataset.key([self.getKind(mapper, opts), id]);
-        self.dataset.get(key, function (err, entity) {
-          if (err) {
-            return reject(err);
-          }
-          return resolve(entity ? entity.data : undefined);
-        });
-      }).then(function (_record) {
-        record = _record;
-        const tasks = [];
 
-        forEachRelation(mapper, opts, function (def, __opts) {
-          let task;
-
-          if (def.foreignKey && (def.type === 'hasOne' || def.type === 'hasMany')) {
-            if (def.type === 'hasOne') {
-              task = self.loadHasOne(mapper, def, record, __opts);
-            } else {
-              task = self.loadHasMany(mapper, def, record, __opts);
-            }
-          } else if (def.type === 'hasMany' && def.localKeys) {
-            throw new Error('find with hasMany & localKeys not supported!');
-          } else if (def.type === 'hasMany' && def.foreignKeys) {
-            throw new Error('find with hasMany & foreignKeys not supported!');
-          } else if (def.type === 'belongsTo') {
-            task = self.loadBelongsTo(mapper, def, record, __opts);
-          }
-
-          if (task) {
-            tasks.push(task);
-          }
-        });
-
-        return Promise.all(tasks);
-      });
-    }).then(function () {
-      let response = new Response(record, {}, 'find');
-      response.found = record ? 1 : 0;
-      response = self.respond(response, opts);
-
-      // afterFind lifecycle hook
-      op = opts.op = 'afterFind';
-      return resolve(self[op](mapper, id, opts, response)).then(function (_response) {
-        // Allow for re-assignment from lifecycle hook
-        return isUndefined(_response) ? response : _response;
+    return new Promise(function (resolve, reject) {
+      const key = self.dataset.key([self.getKind(mapper, opts), id]);
+      self.dataset.get(key, function (err, entity) {
+        if (err) {
+          return reject(err);
+        }
+        return resolve([entity ? entity.data : undefined, {}]);
       });
     });
   },
 
   /**
-   * Retrieve the records that match the selection `query`.
+   * Retrieve the records that match the selection query. Internal method used
+   * by Adapter#findAll.
    *
-   * @name CloudDatastoreAdapter#findAll
+   * @name CloudDatastoreAdapter#_findAll
    * @method
+   * @private
    * @param {Object} mapper The mapper.
    * @param {Object} [query] Selection query.
-   * @param {Object} [query.where] Filtering criteria.
-   * @param {string|Array} [query.orderBy] Sorting criteria.
-   * @param {string|Array} [query.sort] Same as `query.sort`.
-   * @param {number} [query.limit] Limit results.
-   * @param {number} [query.skip] Offset results.
-   * @param {number} [query.offset] Same as `query.skip`.
    * @param {Object} [opts] Configuration options.
-   * @param {boolean} [opts.raw=false] Whether to return a more detailed
-   * response object.
-   * @param {string[]} [opts.with=[]] Relations to eager load.
    * @return {Promise}
    */
-  findAll (mapper, query, opts) {
+  _findAll (mapper, query, opts) {
     const self = this;
-    opts || (opts = {});
-    opts.with || (opts.with = []);
-    let op;
-    let records = [];
 
-    // beforeFindAll lifecycle hook
-    op = opts.op = 'beforeFindAll';
-    return resolve(self[op](mapper, query, opts)).then(function () {
-      return new Promise(function (resolve, reject) {
-        let dsQuery = self.dataset.createQuery(self.getKind(mapper, opts));
-        dsQuery = self.filterQuery(mapper, query, { query: dsQuery });
-        self.dataset.runQuery(dsQuery, function (err, entities) {
-          if (err) {
-            return reject(err);
-          }
-          return resolve(entities ? entities.map(function (entity) {
-            return entity.data;
-          }) : []);
-        });
-      }).then(function (_records) {
-        records = _records;
-        const tasks = [];
-
-        forEachRelation(mapper, opts, function (def, __opts) {
-          let task;
-
-          if (def.foreignKey && (def.type === 'hasOne' || def.type === 'hasMany')) {
-            if (def.type === 'hasMany') {
-              throw new Error('findAll with hasMany not supported!');
-            } else {
-              throw new Error('findAll with hasOne not supported!');
-            }
-          } else if (def.type === 'hasMany' && def.localKeys) {
-            throw new Error('findAll with hasMany & localKeys not supported!');
-          } else if (def.type === 'hasMany' && def.localKeys) {
-            throw new Error('findAll with hasMany & foreignKeys not supported!');
-          } else if (def.type === 'belongsTo') {
-            throw new Error('findAll with belongsTo not supported!');
-          }
-
-          if (task) {
-            tasks.push(task);
-          }
-        });
-        return Promise.all(tasks);
-      });
-    }).then(function () {
-      records || (records = []);
-      let response = new Response(records, {}, 'findAll');
-      response.found = records.length;
-      response = self.respond(response, opts);
-
-      // afterFindAll lifecycle hook
-      op = opts.op = 'afterFindAll';
-      return resolve(self[op](mapper, query, opts, response)).then(function (_response) {
-        // Allow for re-assignment from lifecycle hook
-        return isUndefined(_response) ? response : _response;
+    return new Promise(function (resolve, reject) {
+      let dsQuery = self.dataset.createQuery(self.getKind(mapper, opts));
+      dsQuery = self.filterQuery(mapper, query, { query: dsQuery });
+      self.dataset.runQuery(dsQuery, function (err, entities) {
+        if (err) {
+          return reject(err);
+        }
+        return resolve([entities ? entities.map(function (entity) {
+          return entity.data;
+        }) : [], {}]);
       });
     });
+  },
+
+  /**
+   * Internal method used by CloudDatastoreAdapter#_update and
+   * CloudDatastoreAdapter#_updateAll and CloudDatastoreAdapter#_updateMany.
+   *
+   * @name CloudDatastoreAdapter#_updateHelper
+   * @method
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {(Object|Object[])} records The record or records to be updated.
+   * @param {(Object|Object[])} props The updates to apply to the record(s).
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  _updateHelper (mapper, records, props, opts) {
+    const self = this;
+    const singular = !isArray(records);
+    if (singular) {
+      records = [records];
+      props = [props];
+    }
+    return new Promise(function (resolve, reject) {
+      if (!records.length) {
+        return resolve([singular ? undefined : [], {}]);
+      }
+      const idAttribute = mapper.idAttribute;
+      const entities = [];
+      const _records = [];
+      records.forEach(function (record, i) {
+        if (!record) {
+          return;
+        }
+        const id = get(record, idAttribute);
+        if (!isUndefined(id)) {
+          deepMixIn(record, props[i]);
+          entities.push({
+            method: 'update',
+            key: self.dataset.key([self.getKind(mapper, opts), id]),
+            data: withoutRelations(mapper, record)
+          });
+          _records.push(record);
+        }
+      });
+      if (!_records.length) {
+        return resolve([singular ? undefined : [], {}]);
+      }
+      self.dataset.save(entities, function (err, apiResponse) {
+        if (err) {
+          return reject(err);
+        }
+        return resolve([singular ? _records[0] : _records, apiResponse]);
+      });
+    });
+  },
+
+  /**
+   * Apply the given update to the record with the specified primary key.
+   * Internal method used by Adapter#update.
+   *
+   * @name CloudDatastoreAdapter#_update
+   * @method
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {(string|number)} id The primary key of the record to be updated.
+   * @param {Object} props The update to apply to the record.
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  _update (mapper, id, props, opts) {
+    const self = this;
+    props || (props = {});
+
+    return self.find(mapper, id, { raw: false }).then(function (record) {
+      if (record) {
+        return self._updateHelper(mapper, record, props, opts);
+      } else {
+        throw new Error('Not Found');
+      }
+    });
+  },
+
+  /**
+   * Apply the given update to all records that match the selection query.
+   * Internal method used by Adapter#updateAll.
+   *
+   * @name CloudDatastoreAdapter#_updateAll
+   * @method
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {Object} props The update to apply to the selected records.
+   * @param {Object} [query] Selection query.
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  _updateAll (mapper, props, query, opts) {
+    const self = this;
+    props || (props = {});
+
+    return self.findAll(mapper, query, { raw: false }).then(function (records) {
+      if (records.length) {
+        return self._updateHelper(mapper, records, records.map(function () { return props; }), opts);
+      }
+      return [[], {}];
+    });
+  },
+
+  /**
+   * Update the given records in a single batch. Internal method used by
+   * Adapter#updateMany.
+   *
+   * @name CloudDatastoreAdapter#_updateMany
+   * @method
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {Object[]} records The records to update.
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  _updateMany (mapper, records, opts) {
+    const self = this;
+    records || (records = []);
+
+    const idAttribute = mapper.idAttribute;
+
+    return Promise.all(records.map(function (record) {
+      return self.find(mapper, get(record, idAttribute));
+    })).then(function (_records) {
+      if (_records.length) {
+        return self._updateHelper(mapper, _records, records, opts);
+      }
+      return [[], {}];
+    });
+  },
+
+  loadBelongsTo (mapper, def, records, __opts) {
+    if (isObject(records) && !isArray(records)) {
+      return __super__.loadBelongsTo.call(this, mapper, def, records, __opts);
+    }
+    throw new Error('findAll with belongsTo not supported!');
+  },
+
+  loadHasMany (mapper, def, records, __opts) {
+    if (isObject(records) && !isArray(records)) {
+      return __super__.loadHasMany.call(this, mapper, def, records, __opts);
+    }
+    throw new Error('findAll with hasMany not supported!');
+  },
+
+  loadHasOne (mapper, def, records, __opts) {
+    if (isObject(records) && !isArray(records)) {
+      return __super__.loadHasOne.call(this, mapper, def, records, __opts);
+    }
+    throw new Error('findAll with hasOne not supported!');
+  },
+
+  loadHasManyLocalKeys () {
+    throw new Error('find/findAll with hasMany & localKeys not supported!');
+  },
+
+  loadHasManyForeignKeys () {
+    throw new Error('find/findAll with hasMany & foreignKeys not supported!');
   },
 
   /**
@@ -684,201 +661,6 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
     opts.operators || (opts.operators = {});
     let ownOps = this.operators || {};
     return isUndefined(opts.operators[operator]) ? ownOps[operator] || OPERATORS[operator] : opts.operators[operator];
-  },
-
-  _update (mapper, records, props, opts) {
-    const self = this;
-    const singular = !isArray(records);
-    if (singular) {
-      records = [records];
-      props = [props];
-    }
-    return new Promise(function (resolve, reject) {
-      if (!records.length) {
-        return resolve(singular ? undefined : []);
-      }
-      const idAttribute = mapper.idAttribute;
-      const entities = [];
-      const _records = [];
-      records.forEach(function (record, i) {
-        if (!record) {
-          return;
-        }
-        const id = get(record, idAttribute);
-        if (!isUndefined(id)) {
-          deepMixIn(record, props[i]);
-          entities.push({
-            method: 'update',
-            key: self.dataset.key([self.getKind(mapper, opts), id]),
-            data: withoutRelations(mapper, record)
-          });
-          _records.push(record);
-        }
-      });
-      if (!_records.length) {
-        return resolve(singular ? undefined : []);
-      }
-      self.dataset.save(entities, function (err, apiResponse) {
-        if (err) {
-          return reject(err);
-        }
-        return resolve([apiResponse, singular ? _records[0] : _records]);
-      });
-    });
-  },
-
-  /**
-   * Update the records that match the selection `query`. If a record with the
-   * specified primary key cannot be found then no update is performed and the
-   * promise is resolved with `undefined`.
-   *
-   * @name CloudDatastoreAdapter#update
-   * @method
-   * @param {Object} mapper The mapper.
-   * @param {(string|number)} id The primary key of the record to be updated.
-   * @param {Object} props The update to apply to the record.
-   * @param {Object} [opts] Configuration options.
-   * @param {boolean} [opts.raw=false] Whether to return a more detailed
-   * response object.
-   * @return {Promise}
-   */
-  update (mapper, id, props, opts) {
-    const self = this;
-    props || (props = {});
-    opts || (opts = {});
-    let op;
-
-    // beforeUpdate lifecycle hook
-    op = opts.op = 'beforeUpdate';
-    return resolve(self[op](mapper, id, props, opts)).then(function (_props) {
-      // Allow for re-assignment from lifecycle hook
-      props = isUndefined(_props) ? props : _props;
-      return self.find(mapper, id, { raw: false }).then(function (record) {
-        if (record) {
-          return self._update(mapper, record, props, opts);
-        } else {
-          throw new Error('Not Found');
-        }
-      });
-    }).then(function (result) {
-      let [apiResponse, record] = result;
-      let response = new Response(record, apiResponse, 'update');
-      response.updated = 1;
-      response = self.respond(response, opts);
-
-      // afterUpdate lifecycle hook
-      op = opts.op = 'afterUpdate';
-      return resolve(self[op](mapper, id, props, opts, response)).then(function (_response) {
-        // Allow for re-assignment from lifecycle hook
-        return isUndefined(_response) ? response : _response;
-      });
-    });
-  },
-
-  /**
-   * Update the records that match the selection `query`.
-   *
-   * @name CloudDatastoreAdapter#updateAll
-   * @method
-   * @param {Object} mapper The mapper.
-   * @param {Object} props The update to apply to the selected records.
-   * @param {Object} [query] Selection query.
-   * @param {Object} [query.where] Filtering criteria.
-   * @param {string|Array} [query.orderBy] Sorting criteria.
-   * @param {string|Array} [query.sort] Same as `query.sort`.
-   * @param {number} [query.limit] Limit results.
-   * @param {number} [query.skip] Offset results.
-   * @param {number} [query.offset] Same as `query.skip`.
-   * @param {Object} [opts] Configuration options.
-   * @param {boolean} [opts.raw=false] Whether to return a more detailed
-   * response object.
-   * @return {Promise}
-   */
-  updateAll (mapper, props, query, opts) {
-    const self = this;
-    props || (props = {});
-    query || (query = {});
-    opts || (opts = {});
-    let op;
-
-    // beforeUpdateAll lifecycle hook
-    op = opts.op = 'beforeUpdateAll';
-    return resolve(self[op](mapper, props, query, opts)).then(function (_props) {
-      // Allow for re-assignment from lifecycle hook
-      props = isUndefined(_props) ? props : _props;
-      return self.findAll(mapper, query).then(function (records) {
-        if (records.length) {
-          return self._update(mapper, records, records.map(function () { return props; }), opts);
-        }
-        return [];
-      });
-    }).then(function (result) {
-      let [apiResponse, records] = result;
-      apiResponse || (apiResponse = {});
-      records || (records = []);
-      let response = new Response(records, apiResponse, 'updateAll');
-      response.updated = records.length;
-      response = self.respond(response, opts);
-
-      // afterUpdateAll lifecycle hook
-      op = opts.op = 'afterUpdateAll';
-      return resolve(self[op](mapper, props, query, opts, response)).then(function (_response) {
-        // Allow for re-assignment from lifecycle hook
-        return isUndefined(_response) ? response : _response;
-      });
-    });
-  },
-
-  /**
-   * Update the given records in a single batch.
-   *
-   * @name CloudDatastoreAdapter#updateMany
-   * @method
-   * @param {Object} mapper The mapper.
-   * @param {Object} records The records to update.
-   * @param {Object} [opts] Configuration options.
-   * @param {boolean} [opts.raw=false] Whether to return a more detailed
-   * response object.
-   * @return {Promise}
-   */
-  updateMany (mapper, records, opts) {
-    const self = this;
-    records || (records = []);
-    opts || (opts = {});
-    let op;
-
-    // beforeUpdateMany lifecycle hook
-    op = opts.op = 'beforeUpdateMany';
-    return resolve(self[op](mapper, records, opts)).then(function (_records) {
-      // Allow for re-assignment from lifecycle hook
-      records = isUndefined(_records) ? records : _records;
-      const idAttribute = mapper.idAttribute;
-      _records = records.filter(function (record) {
-        return !isUndefined(get(record, idAttribute));
-      });
-      return Promise.all(_records.map(function (record) {
-        return self.find(mapper, get(record, idAttribute));
-      }));
-    }).then(function (_records) {
-      if (_records.length) {
-        return self._update(mapper, _records, records, opts);
-      }
-      return [];
-    }).then(function (result) {
-      let [apiResponse, _records] = result;
-      apiResponse || (apiResponse = {});
-      _records || (_records = []);
-      let response = new Response(_records, apiResponse, 'updateMany');
-      response.updated = response.data.length;
-      response = self.respond(response, opts);
-
-      // afterUpdateMany lifecycle hook
-      op = opts.op = 'afterUpdateMany';
-      return resolve(self[op](mapper, records, opts, response)).then(function (_response) {
-        // Allow for re-assignment from lifecycle hook
-        return isUndefined(_response) ? response : _response;
-      });
-    });
   }
 });
 
