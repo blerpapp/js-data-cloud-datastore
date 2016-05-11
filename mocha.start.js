@@ -28,10 +28,10 @@ global.sinon = JSDataAdapterTests.sinon;
 
 const gcloudOpts = {
   projectId: process.env.GCLOUD_PROJECT
-}
+};
 
 if (process.env.KEYFILE_PATH) {
-  gcloudOpts.keyFilename = process.env.KEYFILE_PATH
+  gcloudOpts.keyFilename = process.env.KEYFILE_PATH;
 }
 
 JSDataAdapterTests.init({
