@@ -38,9 +38,9 @@ Copyright (c) 2016 js-data-cloud-datastore project authors
 [sl_l]: http://slack.js-data.io
 [npm_b]: https://img.shields.io/npm/v/js-data-cloud-datastore.svg?style=flat
 [npm_l]: https://www.npmjs.org/package/js-data-cloud-datastore
-[circle_b]: https://img.shields.io/circleci/project/js-data/js-data-cloud-datastore.svg?style=flat
-[circle_l]: https://circleci.com/gh/js-data/js-data-cloud-datastore
+[circle_b]: https://img.shields.io/circleci/project/GoogleCloudPlatform/js-data-cloud-datastore.svg?style=flat
+[circle_l]: https://circleci.com/gh/GoogleCloudPlatform/js-data-cloud-datastore
 [dn_b]: https://img.shields.io/npm/dm/js-data-cloud-datastore.svg?style=flat
 [dn_l]: https://www.npmjs.org/package/js-data-cloud-datastore
-[cov_b]: https://img.shields.io/codecov/c/github/js-data/js-data-cloud-datastore.svg?style=flat
-[cov_l]: https://codecov.io/github/js-data/js-data-cloud-datastore
+[cov_b]: https://img.shields.io/codecov/c/github/GoogleCloudPlatform/js-data-cloud-datastore.svg?style=flat
+[cov_l]: https://codecov.io/github/GoogleCloudPlatform/js-data-cloud-datastore
