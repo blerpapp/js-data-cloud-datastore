@@ -15,48 +15,33 @@
 'use strict';
 
 import {utils} from 'js-data';
-import Adapter from 'js-data-adapter';
+import gcloud from 'gcloud';
 import {
+  Adapter,
   reserved
 } from 'js-data-adapter';
 
-const {
-  addHiddenPropsToTarget,
-  classCallCheck,
-  deepMixIn,
-  extend,
-  forOwn,
-  get,
-  isArray,
-  isObject,
-  isString,
-  isUndefined,
-  omit,
-  plainCopy,
-  set
-} = utils;
+const __super__ = Adapter.prototype;
 
-const withoutRelations = function (mapper, props) {
-  return omit(props, mapper.relationFields || []);
+const GCLOUD_DEFAULTS = {
+  projectId: process.env.GCLOUD_PROJECT
 };
 
 const equal = function (query, field, value) {
   return query.filter(field, '=', value);
 };
 
-const __super__ = Adapter.prototype;
-
 /**
  * Default predicate functions for the filtering operators.
  *
- * @name CloudDatastoreAdapter.OPERATORS
+ * @name module:js-data-cloud-datastore.OPERATORS
  * @property {Function} == Equality operator.
  * @property {Function} > "Greater than" operator.
  * @property {Function} >= "Greater than or equal to" operator.
  * @property {Function} < "Less than" operator.
  * @property {Function} <= "Less than or equal to" operator.
  */
-const OPERATORS = {
+export const OPERATORS = {
   '==': equal,
   '===': equal,
   '>': function (query, field, value) {
@@ -79,7 +64,7 @@ const OPERATORS = {
  * @example
  * // Use Container instead of DataStore on the server
  * import {Container} from 'js-data'
- * import CloudDatastoreAdapter from 'js-data-cloud-datastore'
+ * import {CloudDatastoreAdapter} from 'js-data-cloud-datastore'
  *
  * // Create a store to hold your Mappers
  * const store = new Container()
@@ -95,42 +80,69 @@ const OPERATORS = {
  *
  * @class CloudDatastoreAdapter
  * @extends Adapter
- * @param {Object} [opts] Configuration opts.
- * @param {string} [opts.basePath=''] TODO
- * @param {boolean} [opts.debug=false] TODO
+ * @param {Object} [opts] Configuration options.
+ * @param {boolean} [opts.debug=false] See {@link Adapter#debug}.
+ * @param {Function} [opts.gcloud] See {@link CloudDatastoreAdapter#gcloud}.
+ * @param {Object} [opts.gcloudOpts] See {@link CloudDatastoreAdapter#gcloudOpts}.
+ * Ignored if you provide a pre-configured gcloud instance.
+ * @param {boolean} [opts.raw=false] See {@link Adapter#raw}.
  */
-export default function CloudDatastoreAdapter (opts) {
-  const self = this;
-  classCallCheck(self, CloudDatastoreAdapter);
+export function CloudDatastoreAdapter (opts) {
+  utils.classCallCheck(this, CloudDatastoreAdapter);
   opts || (opts = {});
-  Adapter.call(self, opts);
+
+  // Setup non-enumerable properties
+  Object.defineProperties(this, {
+    /**
+     * Instance of gcloud.datastore used by this adapter. Use this directly when
+     * you need to write custom queries.
+     *
+     * @name CloudDatastoreAdapter#datastore
+     * @type {Object}
+     */
+    datastore: {
+      writable: true,
+      value: undefined
+    },
+
+    /**
+     * The gcloud instance used by this adapter. Use this directly when you need
+     * to write custom queries.
+     *
+     * @name CloudDatastoreAdapter#gcloud
+     * @type {Object}
+     */
+    gcloud: {
+      writable: true,
+      value: undefined
+    }
+  });
+
+  Adapter.call(this, opts);
 
   /**
-   * Override the default predicate functions for specified operators.
+   * Options to be passed to a new gcloud instance, if one wasn't provided.
+   *
+   * @name CloudDatastoreAdapter#gcloudOpts
+   * @type {Object}
+   * @default {}
+   * @property {string} projectId Google Cloud Platform project id.
+   */
+  this.gcloudOpts || (this.gcloudOpts = {});
+  utils.fillIn(this.gcloudOpts, GCLOUD_DEFAULTS);
+
+  /**
+   * Override the default predicate functions for the specified operators.
    *
    * @name CloudDatastoreAdapter#operators
    * @type {Object}
    * @default {}
    */
-  self.operators || (self.operators = {});
+  this.operators || (this.operators = {});
+  utils.fillIn(this.operators, OPERATORS);
 
-  /**
-   * Instance of gcloud used by this adapter.
-   *
-   * @name CloudDatastoreAdapter#gcloud
-   * @type {Object}
-   */
-  self.gcloud = require('gcloud')(opts.gcloud || {
-    projectId: process.env.GCLOUD_PROJECT
-  });
-
-  /**
-   * Instance of gcloud.datastore.dataset used by this adapter.
-   *
-   * @name CloudDatastoreAdapter#dataset
-   * @type {Object}
-   */
-  self.dataset = self.gcloud.datastore.dataset();
+  this.gcloud || (this.gcloud = gcloud(this.gcloudOpts));
+  this.datastore = this.gcloud.datastore();
 }
 
 // Setup prototype inheritance from Adapter
@@ -151,22 +163,32 @@ Object.defineProperty(CloudDatastoreAdapter, '__super__', {
 /**
  * Alternative to ES6 class syntax for extending `CloudDatastoreAdapter`.
  *
- * @name CloudDatastoreAdapter.extend
- * @method
+ * @example <caption>Using the ES2015 class syntax.</caption>
+ * class MyCloudDatastoreAdapter extends CloudDatastoreAdapter {...}
+ * const adapter = new MyCloudDatastoreAdapter()
+ *
+ * @example <caption>Using {@link CloudDatastoreAdapter.extend}.</caption>
+ * var instanceProps = {...}
+ * var classProps = {...}
+ *
+ * var MyCloudDatastoreAdapter = CloudDatastoreAdapter.extend(instanceProps, classProps)
+ * var adapter = new MyCloudDatastoreAdapter()
+ *
+ * @method CloudDatastoreAdapter.extend
+ * @static
  * @param {Object} [instanceProps] Properties that will be added to the
- * prototype of the CloudDatastoreAdapter.
+ * prototype of the subclass.
  * @param {Object} [classProps] Properties that will be added as static
- * properties to the CloudDatastoreAdapter itself.
- * @return {Object} CloudDatastoreAdapter of `CloudDatastoreAdapter`.
+ * properties to the subclass itself.
+ * @return {Constructor} Subclass of `CloudDatastoreAdapter`.
  */
-CloudDatastoreAdapter.extend = extend;
+CloudDatastoreAdapter.extend = utils.extend;
 
-addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
+utils.addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
   /**
    * Apply the specified selection query to the provided Datastore query.
    *
-   * @name CloudDatastoreAdapter#filterSequence
-   * @method
+   * @method CloudDatastoreAdapter#filterQuery
    * @param {Object} mapper The mapper.
    * @param {Object} [query] Selection query.
    * @param {Object} [query.where] Filtering criteria.
@@ -179,14 +201,8 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
    * @param {Object} [opts.operators] Override the default predicate functions
    * for specified operators.
    */
-  filterQuery (mapper, query, opts) {
-    const self = this;
-    let dsQuery;
-
-    if (opts && opts.query) {
-      dsQuery = opts.query;
-    }
-    query = plainCopy(query || {});
+  filterQuery (dsQuery, query, opts) {
+    query = utils.plainCopy(query || {});
     opts || (opts = {});
     opts.operators || (opts.operators = {});
     query.where || (query.where = {});
@@ -195,9 +211,9 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
     query.skip || (query.skip = query.offset);
 
     // Transform non-keyword properties to "where" clause configuration
-    forOwn(query, function (config, keyword) {
+    utils.forOwn(query, (config, keyword) => {
       if (reserved.indexOf(keyword) === -1) {
-        if (isObject(config)) {
+        if (utils.isObject(config)) {
           query.where[keyword] = config;
         } else {
           query.where[keyword] = {
@@ -210,27 +226,26 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
 
     // Apply filter
     if (Object.keys(query.where).length !== 0) {
-      forOwn(query.where, function (criteria, field) {
-        if (!isObject(criteria)) {
+      utils.forOwn(query.where, (criteria, field) => {
+        if (!utils.isObject(criteria)) {
           query.where[field] = {
             '==': criteria
           };
         }
 
-        forOwn(criteria, function (value, operator) {
+        utils.forOwn(criteria, (value, operator) => {
           let isOr = false;
           let _operator = operator;
           if (_operator && _operator[0] === '|') {
             _operator = _operator.substr(1);
             isOr = true;
           }
-          let predicateFn = self.getOperator(_operator, opts);
+          const predicateFn = this.getOperator(_operator, opts);
           if (predicateFn) {
-            const predicateResult = predicateFn(dsQuery, field, value);
             if (isOr) {
               throw new Error(`Operator ${operator} not supported!`);
             } else {
-              dsQuery = predicateResult;
+              dsQuery = predicateFn(dsQuery, field, value);
             }
           } else {
             throw new Error(`Operator ${operator} not supported!`);
@@ -241,13 +256,13 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
 
     // Apply sort
     if (query.orderBy) {
-      if (isString(query.orderBy)) {
+      if (utils.isString(query.orderBy)) {
         query.orderBy = [
           [query.orderBy, 'asc']
         ];
       }
-      query.orderBy.forEach(function (clause) {
-        if (isString(clause)) {
+      query.orderBy.forEach((clause) => {
+        if (utils.isString(clause)) {
           clause = [clause, 'asc'];
         }
         dsQuery = clause[1].toUpperCase() === 'DESC' ? dsQuery.order(clause[0], { descending: true }) : dsQuery.order(clause[0]);
@@ -267,48 +282,58 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
     return dsQuery;
   },
 
+  _count (mapper, query, opts) {
+    opts || (opts = {});
+    query || (query = {});
+
+    return new utils.Promise((resolve, reject) => {
+      let dsQuery = this.datastore.createQuery(this.getKind(mapper, opts));
+      dsQuery = this.filterQuery(dsQuery, query, opts).select('__key__');
+      this.datastore.runQuery(dsQuery, (err, entities) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve([entities ? entities.length : 0, {}]);
+      });
+    });
+  },
+
   /**
    * Internal method used by CloudDatastoreAdapter#_create and
    * CloudDatastoreAdapter#_createMany.
    *
-   * @name CloudDatastoreAdapter#_createHelper
-   * @method
+   * @method CloudDatastoreAdapter#_createHelper
    * @private
    * @param {Object} mapper The mapper.
    * @param {(Object|Object[])} records The record or records to be created.
    * @return {Promise}
    */
   _createHelper (mapper, records) {
-    const self = this;
-    const singular = !isArray(records);
+    const singular = !utils.isArray(records);
     if (singular) {
       records = [records];
     }
-    return new Promise(function (resolve, reject) {
+    records = utils.plainCopy(records);
+    return new utils.Promise((resolve, reject) => {
       let apiResponse;
       const idAttribute = mapper.idAttribute;
-      const incompleteKey = self.dataset.key([mapper.name]);
+      const incompleteKey = this.datastore.key([mapper.name]);
 
-      // Remove relations
-      records = records.map(function (record) {
-        return withoutRelations(mapper, record);
-      });
-
-      self.dataset.runInTransaction(function (transaction, done) {
+      this.datastore.runInTransaction((transaction, done) => {
         // Allocate ids
-        transaction.allocateIds(incompleteKey, records.length, function (err, keys) {
+        transaction.allocateIds(incompleteKey, records.length, (err, keys) => {
           if (err) {
             return reject(err);
           }
-          const entities = records.map(function (_record, i) {
-            set(_record, idAttribute, keys[i].path[1]);
+          const entities = records.map((_record, i) => {
+            utils.set(_record, idAttribute, keys[i].path[1]);
             return {
               key: keys[i],
               data: _record
             };
           });
           // Save records
-          self.dataset.save(entities, function (err, _apiResponse) {
+          this.datastore.save(entities, (err, _apiResponse) => {
             if (err) {
               return reject(err);
             }
@@ -316,7 +341,7 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
             return done();
           });
         });
-      }, function (err) {
+      }, (err) => {
         if (err) {
           return reject(err);
         }
@@ -328,8 +353,7 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
   /**
    * Create a new record. Internal method used by Adapter#create.
    *
-   * @name CloudDatastoreAdapter#_create
-   * @method
+   * @method CloudDatastoreAdapter#_create
    * @private
    * @param {Object} mapper The mapper.
    * @param {Object} props The record to be created.
@@ -344,8 +368,7 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
    * Create multiple records in a single batch. Internal method used by
    * Adapter#createMany.
    *
-   * @name CloudDatastoreAdapter#_createMany
-   * @method
+   * @method CloudDatastoreAdapter#_createMany
    * @private
    * @param {Object} mapper The mapper.
    * @param {Object} props The records to be created.
@@ -360,8 +383,7 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
    * Destroy the record with the given primary key. Internal method used by
    * Adapter#destroy.
    *
-   * @name CloudDatastoreAdapter#_destroy
-   * @method
+   * @method CloudDatastoreAdapter#_destroy
    * @private
    * @param {Object} mapper The mapper.
    * @param {(string|number)} id Primary key of the record to destroy.
@@ -369,9 +391,8 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
    * @return {Promise}
    */
   _destroy (mapper, id) {
-    const self = this;
-    return new Promise(function (resolve, reject) {
-      self.dataset.delete(self.dataset.key([mapper.name, id]), function (err, apiResponse) {
+    return new utils.Promise((resolve, reject) => {
+      this.datastore.delete(this.datastore.key([mapper.name, id]), (err, apiResponse) => {
         return err ? reject(err) : resolve([undefined, apiResponse]);
       });
     });
@@ -381,33 +402,29 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
    * Destroy the records that match the selection query. Internal method used by
    * Adapter#destroyAll.
    *
-   * @name CloudDatastoreAdapter#_destroyAll
-   * @method
+   * @method CloudDatastoreAdapter#_destroyAll
    * @private
    * @param {Object} mapper the mapper.
    * @param {Object} [query] Selection query.
    * @return {Promise}
    */
-  _destroyAll (mapper, query) {
-    const self = this;
-
-    return self.findAll(mapper, query, { raw: false }).then(function (records) {
-      if (records.length) {
-        return new Promise(function (resolve, reject) {
-          const keys = [];
-          const idAttribute = mapper.idAttribute;
-          records.forEach(function (record) {
-            const id = get(record, idAttribute);
-            if (!isUndefined(id)) {
-              keys.push(self.dataset.key([mapper.name, id]));
-            }
-          });
-          self.dataset.delete(keys, function (err, apiResponse) {
-            return err ? reject(err) : resolve([undefined, apiResponse]);
-          });
+  _destroyAll (mapper, query, opts) {
+    return new utils.Promise((resolve, reject) => {
+      let dsQuery = this.datastore.createQuery(this.getKind(mapper, opts));
+      dsQuery = this.filterQuery(dsQuery, query, opts);
+      dsQuery = dsQuery.select('__key__');
+      this.datastore.runQuery(dsQuery, (err, entities) => {
+        if (err) {
+          return reject(err);
+        }
+        const keys = entities.map((entity) => entity.key);
+        this.datastore.delete(keys, (err, apiResponse) => {
+          if (err) {
+            return reject(err);
+          }
+          resolve([undefined, apiResponse]);
         });
-      }
-      return [undefined, {}];
+      });
     });
   },
 
@@ -415,8 +432,7 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
    * Retrieve the record with the given primary key. Internal method used by
    * Adapter#find.
    *
-   * @name CloudDatastoreAdapter#_find
-   * @method
+   * @method CloudDatastoreAdapter#_find
    * @private
    * @param {Object} mapper The mapper.
    * @param {(string|number)} id Primary key of the record to retrieve.
@@ -424,15 +440,10 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
    * @return {Promise}
    */
   _find (mapper, id, opts) {
-    const self = this;
-
-    return new Promise(function (resolve, reject) {
-      const key = self.dataset.key([self.getKind(mapper, opts), id]);
-      self.dataset.get(key, function (err, entity) {
-        if (err) {
-          return reject(err);
-        }
-        return resolve([entity ? entity.data : undefined, {}]);
+    return new utils.Promise((resolve, reject) => {
+      const key = this.datastore.key([this.getKind(mapper, opts), id]);
+      this.datastore.get(key, (err, entity) => {
+        return err ? reject(err) : resolve([entity ? entity.data : undefined, {}]);
       });
     });
   },
@@ -441,8 +452,7 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
    * Retrieve the records that match the selection query. Internal method used
    * by Adapter#findAll.
    *
-   * @name CloudDatastoreAdapter#_findAll
-   * @method
+   * @method CloudDatastoreAdapter#_findAll
    * @private
    * @param {Object} mapper The mapper.
    * @param {Object} [query] Selection query.
@@ -450,18 +460,38 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
    * @return {Promise}
    */
   _findAll (mapper, query, opts) {
-    const self = this;
-
-    return new Promise(function (resolve, reject) {
-      let dsQuery = self.dataset.createQuery(self.getKind(mapper, opts));
-      dsQuery = self.filterQuery(mapper, query, { query: dsQuery });
-      self.dataset.runQuery(dsQuery, function (err, entities) {
+    return new utils.Promise((resolve, reject) => {
+      let dsQuery = this.datastore.createQuery(this.getKind(mapper, opts));
+      dsQuery = this.filterQuery(dsQuery, query, opts);
+      this.datastore.runQuery(dsQuery, (err, entities) => {
         if (err) {
           return reject(err);
         }
-        return resolve([entities ? entities.map(function (entity) {
-          return entity.data;
-        }) : [], {}]);
+        return resolve([entities ? entities.map((entity) => entity.data) : [], {}]);
+      });
+    });
+  },
+
+  _sum (mapper, field, query, opts) {
+    if (!utils.isString(field)) {
+      throw new Error('field must be a string!');
+    }
+    opts || (opts = {});
+    query || (query = {});
+    const canSelect = !Object.keys(query).length;
+
+    return new utils.Promise((resolve, reject) => {
+      let dsQuery = this.datastore.createQuery(this.getKind(mapper, opts));
+      dsQuery = this.filterQuery(dsQuery, query, opts);
+      if (canSelect) {
+        dsQuery = dsQuery.select(field);
+      }
+      this.datastore.runQuery(dsQuery, (err, entities) => {
+        if (err) {
+          return reject(err);
+        }
+        const sum = entities.reduce((sum, entity) => sum + (entity.data[field] || 0), 0);
+        return resolve([sum, {}]);
       });
     });
   },
@@ -470,8 +500,7 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
    * Internal method used by CloudDatastoreAdapter#_update and
    * CloudDatastoreAdapter#_updateAll and CloudDatastoreAdapter#_updateMany.
    *
-   * @name CloudDatastoreAdapter#_updateHelper
-   * @method
+   * @method CloudDatastoreAdapter#_updateHelper
    * @private
    * @param {Object} mapper The mapper.
    * @param {(Object|Object[])} records The record or records to be updated.
@@ -480,30 +509,29 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
    * @return {Promise}
    */
   _updateHelper (mapper, records, props, opts) {
-    const self = this;
-    const singular = !isArray(records);
+    const singular = !utils.isArray(records);
     if (singular) {
       records = [records];
       props = [props];
     }
-    return new Promise(function (resolve, reject) {
+    return new utils.Promise((resolve, reject) => {
       if (!records.length) {
         return resolve([singular ? undefined : [], {}]);
       }
       const idAttribute = mapper.idAttribute;
       const entities = [];
       const _records = [];
-      records.forEach(function (record, i) {
+      records.forEach((record, i) => {
         if (!record) {
           return;
         }
-        const id = get(record, idAttribute);
-        if (!isUndefined(id)) {
-          deepMixIn(record, props[i]);
+        const id = utils.get(record, idAttribute);
+        if (!utils.isUndefined(id)) {
+          utils.deepMixIn(record, props[i]);
           entities.push({
             method: 'update',
-            key: self.dataset.key([self.getKind(mapper, opts), id]),
-            data: withoutRelations(mapper, record)
+            key: this.datastore.key([this.getKind(mapper, opts), id]),
+            data: record
           });
           _records.push(record);
         }
@@ -511,11 +539,8 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
       if (!_records.length) {
         return resolve([singular ? undefined : [], {}]);
       }
-      self.dataset.save(entities, function (err, apiResponse) {
-        if (err) {
-          return reject(err);
-        }
-        return resolve([singular ? _records[0] : _records, apiResponse]);
+      this.datastore.save(entities, (err, apiResponse) => {
+        return err ? reject(err) : resolve([singular ? _records[0] : _records, apiResponse]);
       });
     });
   },
@@ -524,8 +549,7 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
    * Apply the given update to the record with the specified primary key.
    * Internal method used by Adapter#update.
    *
-   * @name CloudDatastoreAdapter#_update
-   * @method
+   * @method CloudDatastoreAdapter#_update
    * @private
    * @param {Object} mapper The mapper.
    * @param {(string|number)} id The primary key of the record to be updated.
@@ -534,15 +558,13 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
    * @return {Promise}
    */
   _update (mapper, id, props, opts) {
-    const self = this;
     props || (props = {});
-
-    return self.find(mapper, id, { raw: false }).then(function (record) {
-      if (record) {
-        return self._updateHelper(mapper, record, props, opts);
-      } else {
-        throw new Error('Not Found');
+    return this._find(mapper, id, opts).then((result) => {
+      if (result[0]) {
+        props = utils.plainCopy(props);
+        return this._updateHelper(mapper, result[0], props, opts);
       }
+      throw new Error('Not Found');
     });
   },
 
@@ -550,8 +572,7 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
    * Apply the given update to all records that match the selection query.
    * Internal method used by Adapter#updateAll.
    *
-   * @name CloudDatastoreAdapter#_updateAll
-   * @method
+   * @method CloudDatastoreAdapter#_updateAll
    * @private
    * @param {Object} mapper The mapper.
    * @param {Object} props The update to apply to the selected records.
@@ -560,12 +581,13 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
    * @return {Promise}
    */
   _updateAll (mapper, props, query, opts) {
-    const self = this;
     props || (props = {});
-
-    return self.findAll(mapper, query, { raw: false }).then(function (records) {
+    return this._findAll(mapper, query, opts).then((result) => {
+      let [records] = result;
+      records = records.filter((record) => record);
       if (records.length) {
-        return self._updateHelper(mapper, records, records.map(function () { return props; }), opts);
+        props = utils.plainCopy(props);
+        return this._updateHelper(mapper, records, records.map(() => props), opts);
       }
       return [[], {}];
     });
@@ -575,8 +597,7 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
    * Update the given records in a single batch. Internal method used by
    * Adapter#updateMany.
    *
-   * @name CloudDatastoreAdapter#_updateMany
-   * @method
+   * @method CloudDatastoreAdapter#_updateMany
    * @private
    * @param {Object} mapper The mapper.
    * @param {Object[]} records The records to update.
@@ -584,37 +605,42 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
    * @return {Promise}
    */
   _updateMany (mapper, records, opts) {
-    const self = this;
     records || (records = []);
-
     const idAttribute = mapper.idAttribute;
-
-    return Promise.all(records.map(function (record) {
-      return self.find(mapper, get(record, idAttribute));
-    })).then(function (_records) {
+    const tasks = records.map((record) => this._find(mapper, utils.get(record, idAttribute), opts));
+    return utils.Promise.all(tasks).then((results) => {
+      let _records = results.map((result) => result[0]);
+      _records.forEach((record, i) => {
+        if (!record) {
+          records[i] = undefined;
+        }
+      });
+      _records = _records.filter((record) => record);
+      records = records.filter((record) => record);
       if (_records.length) {
-        return self._updateHelper(mapper, _records, records, opts);
+        records = utils.plainCopy(records);
+        return this._updateHelper(mapper, _records, records, opts);
       }
       return [[], {}];
     });
   },
 
   loadBelongsTo (mapper, def, records, __opts) {
-    if (isObject(records) && !isArray(records)) {
+    if (utils.isObject(records) && !utils.isArray(records)) {
       return __super__.loadBelongsTo.call(this, mapper, def, records, __opts);
     }
     throw new Error('findAll with belongsTo not supported!');
   },
 
   loadHasMany (mapper, def, records, __opts) {
-    if (isObject(records) && !isArray(records)) {
+    if (utils.isObject(records) && !utils.isArray(records)) {
       return __super__.loadHasMany.call(this, mapper, def, records, __opts);
     }
     throw new Error('findAll with hasMany not supported!');
   },
 
   loadHasOne (mapper, def, records, __opts) {
-    if (isObject(records) && !isArray(records)) {
+    if (utils.isObject(records) && !utils.isArray(records)) {
       return __super__.loadHasOne.call(this, mapper, def, records, __opts);
     }
     throw new Error('findAll with hasOne not supported!');
@@ -632,8 +658,7 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
    * Resolve the Cloud Datastore kind for the specified Mapper with the given
    * options.
    *
-   * @name CloudDatastoreAdapter#getKind
-   * @method
+   * @method CloudDatastoreAdapter#getKind
    * @param {Object} mapper The mapper.
    * @param {Object} [opts] Configuration options.
    * @param {Object} [opts.kind] Datastore kind.
@@ -641,15 +666,14 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
    */
   getKind (mapper, opts) {
     opts || (opts = {});
-    return isUndefined(opts.kind) ? (isUndefined(mapper.kind) ? mapper.name : mapper.kind) : opts.kind;
+    return utils.isUndefined(opts.kind) ? (utils.isUndefined(mapper.kind) ? mapper.name : mapper.kind) : opts.kind;
   },
 
   /**
    * Resolve the predicate function for the specified operator based on the
    * given options and this adapter's settings.
    *
-   * @name CloudDatastoreAdapter#getOperator
-   * @method
+   * @method CloudDatastoreAdapter#getOperator
    * @param {string} operator The name of the operator.
    * @param {Object} [opts] Configuration options.
    * @param {Object} [opts.operators] Override the default predicate functions
@@ -660,8 +684,63 @@ addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
     opts || (opts = {});
     opts.operators || (opts.operators = {});
     let ownOps = this.operators || {};
-    return isUndefined(opts.operators[operator]) ? ownOps[operator] || OPERATORS[operator] : opts.operators[operator];
+    return utils.isUndefined(opts.operators[operator]) ? ownOps[operator] || OPERATORS[operator] : opts.operators[operator];
   }
 });
 
-CloudDatastoreAdapter.OPERATORS = OPERATORS;
+/**
+ * Details of the current version of the `js-data-cloud-datastore` module.
+ *
+ * @example <caption>ES2015 modules import</caption>
+ * import {version} from 'js-data-cloud-datastore'
+ * console.log(version.full)
+ *
+ * @example <caption>CommonJS import</caption>
+ * var version = require('js-data-cloud-datastore').version
+ * console.log(version.full)
+ *
+ * @name module:js-data-cloud-datastore.version
+ * @type {Object}
+ * @property {string} version.full The full semver value.
+ * @property {number} version.major The major version number.
+ * @property {number} version.minor The minor version number.
+ * @property {number} version.patch The patch version number.
+ * @property {(string|boolean)} version.alpha The alpha version value,
+ * otherwise `false` if the current version is not alpha.
+ * @property {(string|boolean)} version.beta The beta version value,
+ * otherwise `false` if the current version is not beta.
+ */
+export const version = '<%= version %>';
+
+/**
+ * {@link CloudDatastoreAdapter} class.
+ *
+ * @example <caption>ES2015 modules import</caption>
+ * import {CloudDatastoreAdapter} from 'js-data-cloud-datastore'
+ * const adapter = new CloudDatastoreAdapter()
+ *
+ * @example <caption>CommonJS import</caption>
+ * var CloudDatastoreAdapter = require('js-data-cloud-datastore').CloudDatastoreAdapter
+ * var adapter = new CloudDatastoreAdapter()
+ *
+ * @name module:js-data-cloud-datastore.CloudDatastoreAdapter
+ * @see CloudDatastoreAdapter
+ * @type {Constructor}
+ */
+
+/**
+ * Registered as `js-data-cloud-datastore` in NPM.
+ *
+ * @example <caption>Install from NPM</caption>
+ * npm i --save js-data-cloud-datastore@beta js-data@beta gcloud
+ *
+ * @example <caption>ES2015 modules import</caption>
+ * import {CloudDatastoreAdapter} from 'js-data-cloud-datastore'
+ * const adapter = new CloudDatastoreAdapter()
+ *
+ * @example <caption>CommonJS import</caption>
+ * var CloudDatastoreAdapter = require('js-data-cloud-datastore').CloudDatastoreAdapter
+ * var adapter = new CloudDatastoreAdapter()
+ *
+ * @module js-data-cloud-datastore
+ */

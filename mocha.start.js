@@ -17,19 +17,19 @@
 'use strict';
 
 // prepare environment for js-data-adapter-tests
-require('babel-polyfill');
+import 'babel-polyfill';
 
-var JSData = require('js-data');
-var JSDataAdapterTests = require('js-data-adapter-tests');
-var CloudDatastoreAdapter = require('./');
+import * as JSData from 'js-data';
+import JSDataAdapterTests from 'js-data-adapter-tests';
+import * as JSDataCloudDatastore from './src/index';
 
-global.assert = JSDataAdapterTests.assert;
+const assert = global.assert = JSDataAdapterTests.assert;
 global.sinon = JSDataAdapterTests.sinon;
 
 JSDataAdapterTests.init({
   debug: false,
   JSData: JSData,
-  Adapter: CloudDatastoreAdapter,
+  Adapter: JSDataCloudDatastore.CloudDatastoreAdapter,
   adapterConfig: {
     debug: false
   },
@@ -46,4 +46,13 @@ JSDataAdapterTests.init({
     'findAllBelongsToHasManyNested',
     'filterOnRelations'
   ]
+});
+
+describe('exports', function () {
+  it('should have correct exports', function () {
+    assert(JSDataCloudDatastore.CloudDatastoreAdapter);
+    assert(JSDataCloudDatastore.OPERATORS);
+    assert(JSDataCloudDatastore.OPERATORS['==']);
+    assert(JSDataCloudDatastore.version);
+  });
 });
