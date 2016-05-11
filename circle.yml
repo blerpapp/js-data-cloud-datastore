@@ -7,8 +7,8 @@ machine:
     version: 5.7.0
 dependencies:
   pre:
-    - npm i -g npm codecov
+    - npm i -g npm codecov nyc
     - npm i js-data@^3.0.0-beta.5 gcloud
 test:
   post:
-    - cat coverage/lcov.info | codecov
+    - nyc report --reporter=lcov | codecov
