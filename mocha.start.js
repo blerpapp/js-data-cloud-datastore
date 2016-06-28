@@ -20,7 +20,7 @@
 import 'babel-polyfill';
 
 import * as JSData from 'js-data';
-import JSDataAdapterTests from 'js-data-adapter-tests';
+import JSDataAdapterTests from './node_modules/js-data-adapter/dist/js-data-adapter-tests';
 import * as JSDataCloudDatastore from './src/index';
 
 const assert = global.assert = JSDataAdapterTests.assert;
@@ -35,7 +35,7 @@ if (process.env.KEYFILE_PATH) {
 }
 
 JSDataAdapterTests.init({
-  debug: false,
+  debug: true,
   JSData: JSData,
   Adapter: JSDataCloudDatastore.CloudDatastoreAdapter,
   adapterConfig: {
@@ -53,6 +53,7 @@ JSDataAdapterTests.init({
     'findAllBelongsToNested',
     'findAllBelongsToHasMany',
     'findAllBelongsToHasManyNested',
+    'findAllGroupedWhere',
     'filterOnRelations'
   ]
 });

@@ -1,3 +1,7 @@
+##### 1.0.0-beta.2 - 28 May 2016
+
+Updated dependencies
+
 ##### 1.0.0-beta.1 - 10 May 2016
 
 ###### Breaking changes

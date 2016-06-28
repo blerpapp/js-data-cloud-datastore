@@ -1,7 +1,7 @@
 {
   "name": "js-data-cloud-datastore",
   "description": "Google Cloud Datastore adapter for js-data.",
-  "version": "1.0.0-beta.1",
+  "version": "1.0.0-beta.2",
   "homepage": "https://github.com/GoogleCloudPlatform/js-data-cloud-datastore",
   "license": "Apache-2.0",
   "author": "js-data-cloud-datastore project authors",
@@ -10,7 +10,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/js-data/js-data-cloud-datastore.git"
+    "url": "https://github.com/GoogleCloudPlatform/js-data-cloud-datastore.git"
   },
   "main": "./dist/js-data-cloud-datastore.js",
   "typings": "./dist/js-data-cloud-datastore.d.ts",
@@ -60,21 +60,14 @@
     "release": "npm test && npm run doc && repo-tools updates && repo-tools changelog"
   },
   "dependencies": {
-    "js-data-adapter": "~0.6.1"
+    "js-data-adapter": "~0.7.3"
   },
   "peerDependencies": {
-    "gcloud": "~0.32.0",
-    "js-data": "^3.0.0-beta.5"
+    "gcloud": "~0.36.0",
+    "js-data": "^3.0.0-beta.8"
   },
   "devDependencies": {
-    "babel-polyfill": "6.8.0",
-    "babel-preset-es2015-rollup": "1.1.1",
-    "js-data-adapter-tests": "^2.0.0-alpha.20",
-    "js-data-repo-tools": "0.5.1",
-    "nyc": "6.4.4",
-    "rollup": "0.26.2",
-    "rollup-plugin-babel": "2.4.0",
-    "semistandard": "7.0.5",
-    "source-map-support": "0.4.0"
+    "js-data-repo-tools": "0.5.4",
+    "semistandard": "8.0.0"
   }
 }
