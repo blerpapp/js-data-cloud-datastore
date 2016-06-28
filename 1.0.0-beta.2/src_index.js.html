@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+	<title>js-data-cloud-datastore Source: src/index.js</title>
+
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+	<link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.3.0/styles/googlecode.min.css">
+	<link type="text/css" rel="stylesheet" href="styles/site.jsdata.css">
+  <style>
+    a {
+      text-decoration: none !important;
+    }
+    .hljs {
+      padding: 0;
+      background: none;
+    }
+    #toc {
+      position: fixed;
+      margin-top: 62px;
+      overflow-y: scroll;
+      max-height: 85%;
+    }
+    #toc .toc-list-group-item {
+      display: block;
+    }
+    #toc .toc-list-group-item.active {
+      font-weight: bold;
+    }
+    #toc .toc-list-group-item span.toc-h3 {
+      font-weight: bold;
+    }
+    #main {
+      padding-left: 4%;
+    }
+    article h4.name, article dt.name {
+      font-family: monospace;
+      font-weight: bold;
+    }
+    .code-panel.panel pre {
+      background-color: #FBFBFB;
+      border-color: #E6E5E5;
+    }
+    .page-title {
+      color: #000;
+    }
+    span.param-type a {
+      padding: 3px 5px;
+    }
+    span.param-type a:hover {
+      background-color: #158CBA;
+      color: #fff;
+    }
+    .panel ul {
+      padding-left: 0;
+    }
+    .panel ul li {
+      list-style-type: none;
+    }
+    .tonic {
+      padding-left: 20px;
+    }
+  </style>
+
+</head>
+
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top ">
+<div class="container">
+	<div class="navbar-header">
+		<a class="navbar-brand" href="index.html">js-data-cloud-datastore</a>
+		<button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#topNavigation">
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+        </button>
+	</div>
+	<div class="navbar-collapse collapse" id="topNavigation">
+		<ul class="nav navbar-nav">
+			
+			<li class="dropdown">
+				<a href="modules.list.html" class="dropdown-toggle" data-toggle="dropdown">Modules<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="module-js-data-cloud-datastore.html">js-data-cloud-datastore</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="Adapter.html">Adapter</a></li><li><a href="CloudDatastoreAdapter.html">CloudDatastoreAdapter</a></li><li><a href="Response.html">Response</a></li>
+				</ul>
+			</li>
+			
+		</ul>
+	</div>
+
+</div>
+</div>
+
+
+<div style="padding: 1%" id="toc-content">
+<div class="row">
+
+	
+
+	<!-- <div class="clearfix"></div> -->
+
+	
+	<div class="col-md-12">
+	
+		<div id="main">
+			
+
+		<h1 class="page-title">Source: src/index.js</h1>
+    
+<section>
+    <article>
+        <pre><code
+            class="javascript linenums">// Copyright 2016, Google, Inc.
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//   http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+'use strict';
+
+import {utils} from 'js-data';
+import gcloud from 'gcloud';
+import {
+  Adapter,
+  reserved
+} from 'js-data-adapter';
+
+const __super__ = Adapter.prototype;
+
+const GCLOUD_DEFAULTS = {
+  projectId: process.env.GCLOUD_PROJECT
+};
+
+const equal = function (query, field, value) {
+  return query.filter(field, '=', value);
+};
+
+/**
+ * Default predicate functions for the filtering operators.
+ *
+ * @name module:js-data-cloud-datastore.OPERATORS
+ * @property {Function} == Equality operator.
+ * @property {Function} > "Greater than" operator.
+ * @property {Function} >= "Greater than or equal to" operator.
+ * @property {Function} &lt; "Less than" operator.
+ * @property {Function} &lt;= "Less than or equal to" operator.
+ */
+export const OPERATORS = {
+  '==': equal,
+  '===': equal,
+  '>': function (query, field, value) {
+    return query.filter(field, '>', value);
+  },
+  '>=': function (query, field, value) {
+    return query.filter(field, '>=', value);
+  },
+  '&lt;': function (query, field, value) {
+    return query.filter(field, '&lt;', value);
+  },
+  '&lt;=': function (query, field, value) {
+    return query.filter(field, '&lt;=', value);
+  }
+};
+
+/**
+ * CloudDatastoreAdapter class.
+ *
+ * @example
+ * // Use Container instead of DataStore on the server
+ * import {Container} from 'js-data'
+ * import {CloudDatastoreAdapter} from 'js-data-cloud-datastore'
+ *
+ * // Create a store to hold your Mappers
+ * const store = new Container()
+ *
+ * // Create an instance of CloudDatastoreAdapter with default settings
+ * const adapter = new CloudDatastoreAdapter()
+ *
+ * // Mappers in "store" will use the CloudDatastore adapter by default
+ * store.registerAdapter('datastore', adapter, { default: true })
+ *
+ * // Create a Mapper that maps to a "user" table
+ * store.defineMapper('user')
+ *
+ * @class CloudDatastoreAdapter
+ * @extends Adapter
+ * @param {Object} [opts] Configuration options.
+ * @param {boolean} [opts.debug=false] See {@link Adapter#debug}.
+ * @param {Function} [opts.gcloud] See {@link CloudDatastoreAdapter#gcloud}.
+ * @param {Object} [opts.gcloudOpts] See {@link CloudDatastoreAdapter#gcloudOpts}.
+ * Ignored if you provide a pre-configured gcloud instance.
+ * @param {boolean} [opts.raw=false] See {@link Adapter#raw}.
+ */
+export function CloudDatastoreAdapter (opts) {
+  utils.classCallCheck(this, CloudDatastoreAdapter);
+  opts || (opts = {});
+
+  // Setup non-enumerable properties
+  Object.defineProperties(this, {
+    /**
+     * Instance of gcloud.datastore used by this adapter. Use this directly when
+     * you need to write custom queries.
+     *
+     * @name CloudDatastoreAdapter#datastore
+     * @type {Object}
+     */
+    datastore: {
+      writable: true,
+      value: undefined
+    },
+
+    /**
+     * The gcloud instance used by this adapter. Use this directly when you need
+     * to write custom queries.
+     *
+     * @name CloudDatastoreAdapter#gcloud
+     * @type {Object}
+     */
+    gcloud: {
+      writable: true,
+      value: undefined
+    }
+  });
+
+  Adapter.call(this, opts);
+
+  /**
+   * Options to be passed to a new gcloud instance, if one wasn't provided.
+   *
+   * @name CloudDatastoreAdapter#gcloudOpts
+   * @type {Object}
+   * @default {}
+   * @property {string} projectId Google Cloud Platform project id.
+   */
+  this.gcloudOpts || (this.gcloudOpts = {});
+  utils.fillIn(this.gcloudOpts, GCLOUD_DEFAULTS);
+
+  /**
+   * Override the default predicate functions for the specified operators.
+   *
+   * @name CloudDatastoreAdapter#operators
+   * @type {Object}
+   * @default {}
+   */
+  this.operators || (this.operators = {});
+  utils.fillIn(this.operators, OPERATORS);
+
+  this.gcloud || (this.gcloud = gcloud(this.gcloudOpts));
+  this.datastore = this.gcloud.datastore();
+}
+
+// Setup prototype inheritance from Adapter
+CloudDatastoreAdapter.prototype = Object.create(Adapter.prototype, {
+  constructor: {
+    value: CloudDatastoreAdapter,
+    enumerable: false,
+    writable: true,
+    configurable: true
+  }
+});
+
+Object.defineProperty(CloudDatastoreAdapter, '__super__', {
+  configurable: true,
+  value: Adapter
+});
+
+/**
+ * Alternative to ES6 class syntax for extending `CloudDatastoreAdapter`.
+ *
+ * @example &lt;caption>Using the ES2015 class syntax.&lt;/caption>
+ * class MyCloudDatastoreAdapter extends CloudDatastoreAdapter {...}
+ * const adapter = new MyCloudDatastoreAdapter()
+ *
+ * @example &lt;caption>Using {@link CloudDatastoreAdapter.extend}.&lt;/caption>
+ * var instanceProps = {...}
+ * var classProps = {...}
+ *
+ * var MyCloudDatastoreAdapter = CloudDatastoreAdapter.extend(instanceProps, classProps)
+ * var adapter = new MyCloudDatastoreAdapter()
+ *
+ * @method CloudDatastoreAdapter.extend
+ * @static
+ * @param {Object} [instanceProps] Properties that will be added to the
+ * prototype of the subclass.
+ * @param {Object} [classProps] Properties that will be added as static
+ * properties to the subclass itself.
+ * @return {Constructor} Subclass of `CloudDatastoreAdapter`.
+ */
+CloudDatastoreAdapter.extend = utils.extend;
+
+utils.addHiddenPropsToTarget(CloudDatastoreAdapter.prototype, {
+  /**
+   * Apply the specified selection query to the provided Datastore query.
+   *
+   * @method CloudDatastoreAdapter#filterQuery
+   * @param {Object} mapper The mapper.
+   * @param {Object} [query] Selection query.
+   * @param {Object} [query.where] Filtering criteria.
+   * @param {string|Array} [query.orderBy] Sorting criteria.
+   * @param {string|Array} [query.sort] Same as `query.sort`.
+   * @param {number} [query.limit] Limit results.
+   * @param {number} [query.skip] Offset results.
+   * @param {number} [query.offset] Same as `query.skip`.
+   * @param {Object} [opts] Configuration options.
+   * @param {Object} [opts.operators] Override the default predicate functions
+   * for specified operators.
+   */
+  filterQuery (dsQuery, query, opts) {
+    query = utils.plainCopy(query || {});
+    opts || (opts = {});
+    opts.operators || (opts.operators = {});
+    query.where || (query.where = {});
+    query.orderBy || (query.orderBy = query.sort);
+    query.orderBy || (query.orderBy = []);
+    query.skip || (query.skip = query.offset);
+
+    // Transform non-keyword properties to "where" clause configuration
+    utils.forOwn(query, (config, keyword) => {
+      if (reserved.indexOf(keyword) === -1) {
+        if (utils.isObject(config)) {
+          query.where[keyword] = config;
+        } else {
+          query.where[keyword] = {
+            '==': config
+          };
+        }
+        delete query[keyword];
+      }
+    });
+
+    // Apply filter
+    if (Object.keys(query.where).length !== 0) {
+      utils.forOwn(query.where, (criteria, field) => {
+        if (!utils.isObject(criteria)) {
+          query.where[field] = {
+            '==': criteria
+          };
+        }
+
+        utils.forOwn(criteria, (value, operator) => {
+          let isOr = false;
+          let _operator = operator;
+          if (_operator &amp;&amp; _operator[0] === '|') {
+            _operator = _operator.substr(1);
+            isOr = true;
+          }
+          const predicateFn = this.getOperator(_operator, opts);
+          if (predicateFn) {
+            if (isOr) {
+              throw new Error(`Operator ${operator} not supported!`);
+            } else {
+              dsQuery = predicateFn(dsQuery, field, value);
+            }
+          } else {
+            throw new Error(`Operator ${operator} not supported!`);
+          }
+        });
+      });
+    }
+
+    // Apply sort
+    if (query.orderBy) {
+      if (utils.isString(query.orderBy)) {
+        query.orderBy = [
+          [query.orderBy, 'asc']
+        ];
+      }
+      query.orderBy.forEach((clause) => {
+        if (utils.isString(clause)) {
+          clause = [clause, 'asc'];
+        }
+        dsQuery = clause[1].toUpperCase() === 'DESC' ? dsQuery.order(clause[0], { descending: true }) : dsQuery.order(clause[0]);
+      });
+    }
+
+    // Apply skip/offset
+    if (query.skip) {
+      dsQuery = dsQuery.offset(+query.skip);
+    }
+
+    // Apply limit
+    if (query.limit) {
+      dsQuery = dsQuery.limit(+query.limit);
+    }
+
+    return dsQuery;
+  },
+
+  _count (mapper, query, opts) {
+    opts || (opts = {});
+    query || (query = {});
+
+    return new utils.Promise((resolve, reject) => {
+      let dsQuery = this.datastore.createQuery(this.getKind(mapper, opts));
+      dsQuery = this.filterQuery(dsQuery, query, opts).select('__key__');
+      this.datastore.runQuery(dsQuery, (err, entities) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve([entities ? entities.length : 0, {}]);
+      });
+    });
+  },
+
+  /**
+   * Internal method used by CloudDatastoreAdapter#_create and
+   * CloudDatastoreAdapter#_createMany.
+   *
+   * @method CloudDatastoreAdapter#_createHelper
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {(Object|Object[])} records The record or records to be created.
+   * @return {Promise}
+   */
+  _createHelper (mapper, records) {
+    const singular = !utils.isArray(records);
+    if (singular) {
+      records = [records];
+    }
+    records = utils.plainCopy(records);
+    return new utils.Promise((resolve, reject) => {
+      let apiResponse;
+      const idAttribute = mapper.idAttribute;
+      const incompleteKey = this.datastore.key([mapper.name]);
+
+      this.datastore.runInTransaction((transaction, done) => {
+        // Allocate ids
+        transaction.allocateIds(incompleteKey, records.length, (err, keys) => {
+          if (err) {
+            return reject(err);
+          }
+          const entities = records.map((_record, i) => {
+            utils.set(_record, idAttribute, keys[i].path[1]);
+            return {
+              key: keys[i],
+              data: _record
+            };
+          });
+          // Save records
+          this.datastore.save(entities, (err, _apiResponse) => {
+            if (err) {
+              return reject(err);
+            }
+            apiResponse = _apiResponse;
+            return done();
+          });
+        });
+      }, (err) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve([singular ? records[0] : records, apiResponse]);
+      });
+    });
+  },
+
+  /**
+   * Create a new record. Internal method used by Adapter#create.
+   *
+   * @method CloudDatastoreAdapter#_create
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {Object} props The record to be created.
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  _create (mapper, props, opts) {
+    return this._createHelper(mapper, props, opts);
+  },
+
+  /**
+   * Create multiple records in a single batch. Internal method used by
+   * Adapter#createMany.
+   *
+   * @method CloudDatastoreAdapter#_createMany
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {Object} props The records to be created.
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  _createMany (mapper, props, opts) {
+    return this._createHelper(mapper, props, opts);
+  },
+
+  /**
+   * Destroy the record with the given primary key. Internal method used by
+   * Adapter#destroy.
+   *
+   * @method CloudDatastoreAdapter#_destroy
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {(string|number)} id Primary key of the record to destroy.
+   * response object.
+   * @return {Promise}
+   */
+  _destroy (mapper, id) {
+    return new utils.Promise((resolve, reject) => {
+      this.datastore.delete(this.datastore.key([mapper.name, id]), (err, apiResponse) => {
+        return err ? reject(err) : resolve([undefined, apiResponse]);
+      });
+    });
+  },
+
+  /**
+   * Destroy the records that match the selection query. Internal method used by
+   * Adapter#destroyAll.
+   *
+   * @method CloudDatastoreAdapter#_destroyAll
+   * @private
+   * @param {Object} mapper the mapper.
+   * @param {Object} [query] Selection query.
+   * @return {Promise}
+   */
+  _destroyAll (mapper, query, opts) {
+    return new utils.Promise((resolve, reject) => {
+      let dsQuery = this.datastore.createQuery(this.getKind(mapper, opts));
+      dsQuery = this.filterQuery(dsQuery, query, opts);
+      dsQuery = dsQuery.select('__key__');
+      this.datastore.runQuery(dsQuery, (err, entities) => {
+        if (err) {
+          return reject(err);
+        }
+        const keys = entities.map((entity) => entity.key);
+        this.datastore.delete(keys, (err, apiResponse) => {
+          if (err) {
+            return reject(err);
+          }
+          resolve([undefined, apiResponse]);
+        });
+      });
+    });
+  },
+
+  /**
+   * Retrieve the record with the given primary key. Internal method used by
+   * Adapter#find.
+   *
+   * @method CloudDatastoreAdapter#_find
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {(string|number)} id Primary key of the record to retrieve.
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  _find (mapper, id, opts) {
+    return new utils.Promise((resolve, reject) => {
+      const key = this.datastore.key([this.getKind(mapper, opts), id]);
+      this.datastore.get(key, (err, entity) => {
+        return err ? reject(err) : resolve([entity ? entity.data : undefined, {}]);
+      });
+    });
+  },
+
+  /**
+   * Retrieve the records that match the selection query. Internal method used
+   * by Adapter#findAll.
+   *
+   * @method CloudDatastoreAdapter#_findAll
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {Object} [query] Selection query.
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  _findAll (mapper, query, opts) {
+    return new utils.Promise((resolve, reject) => {
+      let dsQuery = this.datastore.createQuery(this.getKind(mapper, opts));
+      dsQuery = this.filterQuery(dsQuery, query, opts);
+      this.datastore.runQuery(dsQuery, (err, entities) => {
+        if (err) {
+          return reject(err);
+        }
+        return resolve([entities ? entities.map((entity) => entity.data) : [], {}]);
+      });
+    });
+  },
+
+  _sum (mapper, field, query, opts) {
+    if (!utils.isString(field)) {
+      throw new Error('field must be a string!');
+    }
+    opts || (opts = {});
+    query || (query = {});
+    const canSelect = !Object.keys(query).length;
+
+    return new utils.Promise((resolve, reject) => {
+      let dsQuery = this.datastore.createQuery(this.getKind(mapper, opts));
+      dsQuery = this.filterQuery(dsQuery, query, opts);
+      if (canSelect) {
+        dsQuery = dsQuery.select(field);
+      }
+      this.datastore.runQuery(dsQuery, (err, entities) => {
+        if (err) {
+          return reject(err);
+        }
+        const sum = entities.reduce((sum, entity) => sum + (entity.data[field] || 0), 0);
+        return resolve([sum, {}]);
+      });
+    });
+  },
+
+  /**
+   * Internal method used by CloudDatastoreAdapter#_update and
+   * CloudDatastoreAdapter#_updateAll and CloudDatastoreAdapter#_updateMany.
+   *
+   * @method CloudDatastoreAdapter#_updateHelper
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {(Object|Object[])} records The record or records to be updated.
+   * @param {(Object|Object[])} props The updates to apply to the record(s).
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  _updateHelper (mapper, records, props, opts) {
+    const singular = !utils.isArray(records);
+    if (singular) {
+      records = [records];
+      props = [props];
+    }
+    return new utils.Promise((resolve, reject) => {
+      if (!records.length) {
+        return resolve([singular ? undefined : [], {}]);
+      }
+      const idAttribute = mapper.idAttribute;
+      const entities = [];
+      const _records = [];
+      records.forEach((record, i) => {
+        if (!record) {
+          return;
+        }
+        const id = utils.get(record, idAttribute);
+        if (!utils.isUndefined(id)) {
+          utils.deepMixIn(record, props[i]);
+          entities.push({
+            method: 'update',
+            key: this.datastore.key([this.getKind(mapper, opts), id]),
+            data: record
+          });
+          _records.push(record);
+        }
+      });
+      if (!_records.length) {
+        return resolve([singular ? undefined : [], {}]);
+      }
+      this.datastore.save(entities, (err, apiResponse) => {
+        return err ? reject(err) : resolve([singular ? _records[0] : _records, apiResponse]);
+      });
+    });
+  },
+
+  /**
+   * Apply the given update to the record with the specified primary key.
+   * Internal method used by Adapter#update.
+   *
+   * @method CloudDatastoreAdapter#_update
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {(string|number)} id The primary key of the record to be updated.
+   * @param {Object} props The update to apply to the record.
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  _update (mapper, id, props, opts) {
+    props || (props = {});
+    return this._find(mapper, id, opts).then((result) => {
+      if (result[0]) {
+        props = utils.plainCopy(props);
+        return this._updateHelper(mapper, result[0], props, opts);
+      }
+      throw new Error('Not Found');
+    });
+  },
+
+  /**
+   * Apply the given update to all records that match the selection query.
+   * Internal method used by Adapter#updateAll.
+   *
+   * @method CloudDatastoreAdapter#_updateAll
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {Object} props The update to apply to the selected records.
+   * @param {Object} [query] Selection query.
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  _updateAll (mapper, props, query, opts) {
+    props || (props = {});
+    return this._findAll(mapper, query, opts).then((result) => {
+      let [records] = result;
+      records = records.filter((record) => record);
+      if (records.length) {
+        props = utils.plainCopy(props);
+        return this._updateHelper(mapper, records, records.map(() => props), opts);
+      }
+      return [[], {}];
+    });
+  },
+
+  /**
+   * Update the given records in a single batch. Internal method used by
+   * Adapter#updateMany.
+   *
+   * @method CloudDatastoreAdapter#_updateMany
+   * @private
+   * @param {Object} mapper The mapper.
+   * @param {Object[]} records The records to update.
+   * @param {Object} [opts] Configuration options.
+   * @return {Promise}
+   */
+  _updateMany (mapper, records, opts) {
+    records || (records = []);
+    const idAttribute = mapper.idAttribute;
+    const tasks = records.map((record) => this._find(mapper, utils.get(record, idAttribute), opts));
+    return utils.Promise.all(tasks).then((results) => {
+      let _records = results.map((result) => result[0]);
+      _records.forEach((record, i) => {
+        if (!record) {
+          records[i] = undefined;
+        }
+      });
+      _records = _records.filter((record) => record);
+      records = records.filter((record) => record);
+      if (_records.length) {
+        records = utils.plainCopy(records);
+        return this._updateHelper(mapper, _records, records, opts);
+      }
+      return [[], {}];
+    });
+  },
+
+  loadBelongsTo (mapper, def, records, __opts) {
+    if (utils.isObject(records) &amp;&amp; !utils.isArray(records)) {
+      return __super__.loadBelongsTo.call(this, mapper, def, records, __opts);
+    }
+    throw new Error('findAll with belongsTo not supported!');
+  },
+
+  loadHasMany (mapper, def, records, __opts) {
+    if (utils.isObject(records) &amp;&amp; !utils.isArray(records)) {
+      return __super__.loadHasMany.call(this, mapper, def, records, __opts);
+    }
+    throw new Error('findAll with hasMany not supported!');
+  },
+
+  loadHasOne (mapper, def, records, __opts) {
+    if (utils.isObject(records) &amp;&amp; !utils.isArray(records)) {
+      return __super__.loadHasOne.call(this, mapper, def, records, __opts);
+    }
+    throw new Error('findAll with hasOne not supported!');
+  },
+
+  loadHasManyLocalKeys () {
+    throw new Error('find/findAll with hasMany &amp; localKeys not supported!');
+  },
+
+  loadHasManyForeignKeys () {
+    throw new Error('find/findAll with hasMany &amp; foreignKeys not supported!');
+  },
+
+  /**
+   * Resolve the Cloud Datastore kind for the specified Mapper with the given
+   * options.
+   *
+   * @method CloudDatastoreAdapter#getKind
+   * @param {Object} mapper The mapper.
+   * @param {Object} [opts] Configuration options.
+   * @param {Object} [opts.kind] Datastore kind.
+   * @return {string} The kind.
+   */
+  getKind (mapper, opts) {
+    opts || (opts = {});
+    return utils.isUndefined(opts.kind) ? (utils.isUndefined(mapper.kind) ? mapper.name : mapper.kind) : opts.kind;
+  },
+
+  /**
+   * Resolve the predicate function for the specified operator based on the
+   * given options and this adapter's settings.
+   *
+   * @method CloudDatastoreAdapter#getOperator
+   * @param {string} operator The name of the operator.
+   * @param {Object} [opts] Configuration options.
+   * @param {Object} [opts.operators] Override the default predicate functions
+   * for specified operators.
+   * @return {*} The predicate function for the specified operator.
+   */
+  getOperator (operator, opts) {
+    opts || (opts = {});
+    opts.operators || (opts.operators = {});
+    let ownOps = this.operators || {};
+    return utils.isUndefined(opts.operators[operator]) ? ownOps[operator] || OPERATORS[operator] : opts.operators[operator];
+  }
+});
+
+/**
+ * Details of the current version of the `js-data-cloud-datastore` module.
+ *
+ * @example &lt;caption>ES2015 modules import&lt;/caption>
+ * import {version} from 'js-data-cloud-datastore'
+ * console.log(version.full)
+ *
+ * @example &lt;caption>CommonJS import&lt;/caption>
+ * var version = require('js-data-cloud-datastore').version
+ * console.log(version.full)
+ *
+ * @name module:js-data-cloud-datastore.version
+ * @type {Object}
+ * @property {string} version.full The full semver value.
+ * @property {number} version.major The major version number.
+ * @property {number} version.minor The minor version number.
+ * @property {number} version.patch The patch version number.
+ * @property {(string|boolean)} version.alpha The alpha version value,
+ * otherwise `false` if the current version is not alpha.
+ * @property {(string|boolean)} version.beta The beta version value,
+ * otherwise `false` if the current version is not beta.
+ */
+export const version = '&lt;%= version %>';
+
+/**
+ * {@link CloudDatastoreAdapter} class.
+ *
+ * @example &lt;caption>ES2015 modules import&lt;/caption>
+ * import {CloudDatastoreAdapter} from 'js-data-cloud-datastore'
+ * const adapter = new CloudDatastoreAdapter()
+ *
+ * @example &lt;caption>CommonJS import&lt;/caption>
+ * var CloudDatastoreAdapter = require('js-data-cloud-datastore').CloudDatastoreAdapter
+ * var adapter = new CloudDatastoreAdapter()
+ *
+ * @name module:js-data-cloud-datastore.CloudDatastoreAdapter
+ * @see CloudDatastoreAdapter
+ * @type {Constructor}
+ */
+
+/**
+ * Registered as `js-data-cloud-datastore` in NPM.
+ *
+ * @example &lt;caption>Install from NPM&lt;/caption>
+ * npm i --save js-data-cloud-datastore@beta js-data@beta gcloud
+ *
+ * @example &lt;caption>ES2015 modules import&lt;/caption>
+ * import {CloudDatastoreAdapter} from 'js-data-cloud-datastore'
+ * const adapter = new CloudDatastoreAdapter()
+ *
+ * @example &lt;caption>CommonJS import&lt;/caption>
+ * var CloudDatastoreAdapter = require('js-data-cloud-datastore').CloudDatastoreAdapter
+ * var adapter = new CloudDatastoreAdapter()
+ *
+ * @module js-data-cloud-datastore
+ */
+</code></pre>
+    </article>
+</section>
+
+
+
+
+
+		</div>
+	</div>
+
+</div>
+</div>
+
+<div class="modal fade" id="searchResults">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Search results</h4>
+      </div>
+      <div class="modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div>
+
+<footer>
+
+	<div style="text-align:center"><a href="http://js-data.io">js-data.io</a></div>
+
+
+	<span class="copyright">
+	js-data-cloud-datastore Copyright © 2014-2016 js-data-cloud-datastore project authors
+	</span>
+
+<span class="jsdoc-message">
+	Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a>
+	
+		on 2016-06-28T11:30:23-07:00
+	
+	using the <a href="https://github.com/docstrap/docstrap">DocStrap template</a>.
+</span>
+</footer>
+
+<script src="scripts/docstrap.lib.js"></script>
+<script src="scripts/toc.js"></script>
+<!-- <script type="text/javascript" src="scripts/fulltext-search-ui.js"></script> -->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.3.0/highlight.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.3.0/languages/javascript.min.js"></script>
+
+<script>
+$( function () {
+	$( "[id*='$']" ).each( function () {
+		var $this = $( this );
+
+		$this.attr( "id", $this.attr( "id" ).replace( "$", "__" ) );
+	} );
+
+	$( ".tutorial-section pre, .readme-section pre" ).each( function () {
+		var $this = $( this );
+
+		var example = $this.find( "code" );
+		exampleText = example.html();
+		var lang = /{@lang (.*?)}/.exec( exampleText );
+		if ( lang && lang[1] ) {
+			exampleText = exampleText.replace( lang[0], "" );
+			example.html( exampleText );
+			lang = lang[1];
+		} else {
+			var langClassMatch = example.parent()[0].className.match(/lang\-(\S+)/);
+			lang = langClassMatch ? langClassMatch[1] : "javascript";
+		}
+
+		if ( lang ) {
+
+			$this
+			.addClass( lang )
+			.addClass( "linenums" )
+			.html( example.html() );
+
+		}
+	} );
+
+	hljs.initHighlightingOnLoad();
+
+	$.catchAnchorLinks( {
+        navbarOffset: 10
+	} );
+	$( "#toc" ).toc( {
+		anchorName  : function ( i, heading, prefix ) {
+			var id = $( heading ).attr( "id" );
+			return id && id.replace(/\~/g, '-inner-').replace(/\./g, '-static-') || ( prefix + i );
+		},
+		selectors   : "#toc-content h1,#toc-content h2,#toc-content h3,#toc-content h4",
+		showAndHide : false,
+		smoothScrolling: true,
+    highlightOnScroll: true
+	} );
+
+	$( "#main span[id^='toc']" ).addClass( "toc-shim" );
+	$( '.dropdown-toggle' ).dropdown();
+
+    $( "table" ).each( function () {
+      var $this = $( this );
+      $this.addClass('table');
+    } );
+
+} );
+</script>
+
+
+
+<!--Navigation and Symbol Display-->
+
+
+<!--Google Analytics-->
+
+
+<script src="https://embed.tonicdev.com"></script>
+<script>
+  window.loadTonic = function (id) {
+    var btn = document.getElementById('btn-' + id);
+    $(btn).hide();
+    var pre = document.getElementById('pre-' + id);
+    $(pre).hide();
+    var el = document.getElementById('tonic-' + id);
+    var $el = $(el);
+    var html = $el.html();
+    $el.empty();
+    $el.show();
+    console.log(html);
+    Tonic.createNotebook({
+      element: el,
+      source: html
+    });
+  };
+</script>
+
+</body>
+</html>

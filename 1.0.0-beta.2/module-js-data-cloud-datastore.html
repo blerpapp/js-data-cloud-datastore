@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width">
+	<title>js-data-cloud-datastore Module: js-data-cloud-datastore</title>
+
+	<!--[if lt IE 9]>
+	<script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script>
+	<![endif]-->
+	<link type="text/css" rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.3.0/styles/googlecode.min.css">
+	<link type="text/css" rel="stylesheet" href="styles/site.jsdata.css">
+  <style>
+    a {
+      text-decoration: none !important;
+    }
+    .hljs {
+      padding: 0;
+      background: none;
+    }
+    #toc {
+      position: fixed;
+      margin-top: 62px;
+      overflow-y: scroll;
+      max-height: 85%;
+    }
+    #toc .toc-list-group-item {
+      display: block;
+    }
+    #toc .toc-list-group-item.active {
+      font-weight: bold;
+    }
+    #toc .toc-list-group-item span.toc-h3 {
+      font-weight: bold;
+    }
+    #main {
+      padding-left: 4%;
+    }
+    article h4.name, article dt.name {
+      font-family: monospace;
+      font-weight: bold;
+    }
+    .code-panel.panel pre {
+      background-color: #FBFBFB;
+      border-color: #E6E5E5;
+    }
+    .page-title {
+      color: #000;
+    }
+    span.param-type a {
+      padding: 3px 5px;
+    }
+    span.param-type a:hover {
+      background-color: #158CBA;
+      color: #fff;
+    }
+    .panel ul {
+      padding-left: 0;
+    }
+    .panel ul li {
+      list-style-type: none;
+    }
+    .tonic {
+      padding-left: 20px;
+    }
+  </style>
+
+</head>
+
+<body>
+
+<div class="navbar navbar-default navbar-fixed-top ">
+<div class="container">
+	<div class="navbar-header">
+		<a class="navbar-brand" href="index.html">js-data-cloud-datastore</a>
+		<button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#topNavigation">
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+			<span class="icon-bar"></span>
+        </button>
+	</div>
+	<div class="navbar-collapse collapse" id="topNavigation">
+		<ul class="nav navbar-nav">
+			
+			<li class="dropdown">
+				<a href="modules.list.html" class="dropdown-toggle" data-toggle="dropdown">Modules<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="module-js-data-cloud-datastore.html">js-data-cloud-datastore</a></li>
+				</ul>
+			</li>
+			
+			<li class="dropdown">
+				<a href="classes.list.html" class="dropdown-toggle" data-toggle="dropdown">Classes<b class="caret"></b></a>
+				<ul class="dropdown-menu ">
+					<li><a href="Adapter.html">Adapter</a></li><li><a href="CloudDatastoreAdapter.html">CloudDatastoreAdapter</a></li><li><a href="Response.html">Response</a></li>
+				</ul>
+			</li>
+			
+		</ul>
+	</div>
+
+</div>
+</div>
+
+
+<div style="padding: 1%" id="toc-content">
+<div class="row">
+
+	
+		<div class="col-lg-3 col-md-4 hidden-xs hidden-sm toc-wrapper">
+			<div id="toc" class="col-lg-3 col-md-4 hidden-xs hidden-sm toc-wrapper"></div>
+		</div>
+	
+
+	<!-- <div class="clearfix"></div> -->
+
+	
+	<div class="col-lg-9 col-md-8">
+	
+		<div id="main">
+			
+
+	<h1 class="page-title">Module: js-data-cloud-datastore</h1>
+<section>
+
+<header>
+    
+</header>
+
+
+<article>
+    <div class="container-overview">
+    
+        
+            <div class="description"><p>Registered as <code>js-data-cloud-datastore</code> in NPM.</p></div>
+        
+
+        
+<div class="panel panel-default">
+  <div class="panel-heading"><strong>Details</strong></div>
+  <table class="table table-striped table-bordered">
+    <thead>
+      <tr>
+        
+        
+        
+        
+        
+          <th>Source</th>
+        
+        
+        
+        
+        
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        
+        
+        
+        
+        
+          <td>
+            <a href="src_index.js.html">src/index.js</a>,
+             <a href="src_index.js.html#sunlight-1-line-731">line 731</a>
+          </td>
+        
+        
+        
+        
+        
+      </tr>
+    </tbody>
+  </table>
+</div>
+<dl class="details">
+    
+
+  
+
+    
+
+    
+
+    
+
+  
+
+  
+
+  
+
+  
+</dl>
+
+
+        
+            <div class="code-panel panel panel-warning">
+              <div class="panel-heading">
+                <strong>Examples</strong>
+              </div>
+              <div class="panel-body">
+                
+        <p class="code-caption" id="btn-Install from NPM">
+          <button class="btn btn-primary" onclick="loadTonic('Install from NPM')">Try it out</button>
+        </p>
+    
+    <pre id="pre-Install from NPM"><code class="javascript">npm i --save js-data-cloud-datastore@beta js-data@beta gcloud</code></pre>
+    <div class="tonic" id="tonic-Install from NPM" style="display: none;">
+      npm i --save js-data-cloud-datastore@beta js-data@beta gcloud
+    </div>
+
+        <p class="code-caption" id="btn-ES2015 modules import">
+          <button class="btn btn-primary" onclick="loadTonic('ES2015 modules import')">Try it out</button>
+        </p>
+    
+    <pre id="pre-ES2015 modules import"><code class="javascript">import {CloudDatastoreAdapter} from &#x27;js-data-cloud-datastore&#x27;
+const adapter = new CloudDatastoreAdapter()</code></pre>
+    <div class="tonic" id="tonic-ES2015 modules import" style="display: none;">
+      import {CloudDatastoreAdapter} from &#x27;js-data-cloud-datastore&#x27;
+const adapter = new CloudDatastoreAdapter()
+    </div>
+
+        <p class="code-caption" id="btn-CommonJS import">
+          <button class="btn btn-primary" onclick="loadTonic('CommonJS import')">Try it out</button>
+        </p>
+    
+    <pre id="pre-CommonJS import"><code class="javascript">var CloudDatastoreAdapter = require(&#x27;js-data-cloud-datastore&#x27;).CloudDatastoreAdapter
+var adapter = new CloudDatastoreAdapter()</code></pre>
+    <div class="tonic" id="tonic-CommonJS import" style="display: none;">
+      var CloudDatastoreAdapter = require(&#x27;js-data-cloud-datastore&#x27;).CloudDatastoreAdapter
+var adapter = new CloudDatastoreAdapter()
+    </div>
+
+
+              </div>
+            </div>
+        
+    
+    </div>
+
+    
+
+    
+
+    
+
+    
+
+    
+
+    
+        <h3 class="subsection-title">Members</h3>
+
+        <dl>
+            
+<hr>
+<dt class="name" id=".CloudDatastoreAdapter">
+    <h4><strong><span class="type-signature">&lt;static> </span>CloudDatastoreAdapter</strong></h4>
+
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p><a href="CloudDatastoreAdapter.html">CloudDatastoreAdapter</a> class.</p>
+    </div>
+    
+
+    
+<div class="panel panel-default">
+  <div class="panel-heading"><strong>Details</strong></div>
+  <table class="table table-striped table-bordered">
+    <thead>
+      <tr>
+        
+          <th>Type</th>
+        
+        
+        
+        
+        
+          <th>Source</th>
+        
+        
+        
+        
+          <th>See</th>
+        
+        
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        
+          <td>
+            
+<span class="param-type"><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Operators/new" target="_blank">Constructor</a></span>
+
+
+
+          </td>
+        
+        
+        
+        
+        
+          <td>
+            <a href="src_index.js.html">src/index.js</a>,
+             <a href="src_index.js.html#sunlight-1-line-715">line 715</a>
+          </td>
+        
+        
+        
+        
+          <td>
+            <ul>
+              <li><a href="CloudDatastoreAdapter.html">CloudDatastoreAdapter</a></li>
+              </ul>
+          </td>
+        
+        
+      </tr>
+    </tbody>
+  </table>
+</div>
+<dl class="details">
+    
+
+  
+
+    
+
+    
+
+    
+
+  
+
+  
+
+  
+
+  
+</dl>
+
+
+    
+        <div class="code-panel panel panel-warning">
+          <div class="panel-heading">
+            <strong>Examples</strong>
+          </div>
+          <div class="panel-body">
+            
+        <p class="code-caption" id="btn-ES2015 modules import">
+          <button class="btn btn-primary" onclick="loadTonic('ES2015 modules import')">Try it out</button>
+        </p>
+    
+    <pre id="pre-ES2015 modules import"><code class="javascript">import {CloudDatastoreAdapter} from &#x27;js-data-cloud-datastore&#x27;
+const adapter = new CloudDatastoreAdapter()</code></pre>
+    <div class="tonic" id="tonic-ES2015 modules import" style="display: none;">
+      import {CloudDatastoreAdapter} from &#x27;js-data-cloud-datastore&#x27;
+const adapter = new CloudDatastoreAdapter()
+    </div>
+
+        <p class="code-caption" id="btn-CommonJS import">
+          <button class="btn btn-primary" onclick="loadTonic('CommonJS import')">Try it out</button>
+        </p>
+    
+    <pre id="pre-CommonJS import"><code class="javascript">var CloudDatastoreAdapter = require(&#x27;js-data-cloud-datastore&#x27;).CloudDatastoreAdapter
+var adapter = new CloudDatastoreAdapter()</code></pre>
+    <div class="tonic" id="tonic-CommonJS import" style="display: none;">
+      var CloudDatastoreAdapter = require(&#x27;js-data-cloud-datastore&#x27;).CloudDatastoreAdapter
+var adapter = new CloudDatastoreAdapter()
+    </div>
+
+
+          </div>
+        </div>
+    
+</dd>
+
+        
+            
+<hr>
+<dt class="name" id=".OPERATORS">
+    <h4><strong><span class="type-signature">&lt;static> </span>OPERATORS</strong></h4>
+
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>Default predicate functions for the filtering operators.</p>
+    </div>
+    
+
+    
+<div class="panel panel-default">
+  <div class="panel-heading"><strong>Details</strong></div>
+  <table class="table table-striped table-bordered">
+    <thead>
+      <tr>
+        
+        
+        
+        
+        
+          <th>Source</th>
+        
+        
+        
+        
+        
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        
+        
+        
+        
+        
+          <td>
+            <a href="src_index.js.html">src/index.js</a>,
+             <a href="src_index.js.html#sunlight-1-line-34">line 34</a>
+          </td>
+        
+        
+        
+        
+        
+      </tr>
+    </tbody>
+  </table>
+</div>
+<dl class="details">
+    
+
+    <h5 class="subsection-title">Properties:</h5>
+
+    <dl>
+
+<table class="props table table-striped table-bordered">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>==</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function" target="_blank">Function</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>Equality operator.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>></code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function" target="_blank">Function</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>&quot;Greater than&quot; operator.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>>=</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function" target="_blank">Function</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>&quot;Greater than or equal to&quot; operator.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code><</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function" target="_blank">Function</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>&quot;Less than&quot; operator.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code><=</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function" target="_blank">Function</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>&quot;Less than or equal to&quot; operator.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+</dl>
+
+    
+
+  
+
+    
+
+    
+
+    
+
+  
+
+  
+
+  
+
+  
+</dl>
+
+
+    
+</dd>
+
+        
+            
+<hr>
+<dt class="name" id=".version">
+    <h4><strong><span class="type-signature">&lt;static> </span>version</strong></h4>
+
+    
+</dt>
+<dd>
+    
+    <div class="description">
+        <p>Details of the current version of the <code>js-data-cloud-datastore</code> module.</p>
+    </div>
+    
+
+    
+<div class="panel panel-default">
+  <div class="panel-heading"><strong>Details</strong></div>
+  <table class="table table-striped table-bordered">
+    <thead>
+      <tr>
+        
+          <th>Type</th>
+        
+        
+        
+        
+        
+          <th>Source</th>
+        
+        
+        
+        
+        
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        
+          <td>
+            
+<span class="param-type"><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Object" target="_blank">Object</a></span>
+
+
+
+          </td>
+        
+        
+        
+        
+        
+          <td>
+            <a href="src_index.js.html">src/index.js</a>,
+             <a href="src_index.js.html#sunlight-1-line-691">line 691</a>
+          </td>
+        
+        
+        
+        
+        
+      </tr>
+    </tbody>
+  </table>
+</div>
+<dl class="details">
+    
+
+    <h5 class="subsection-title">Properties:</h5>
+
+    <dl>
+
+<table class="props table table-striped table-bordered">
+    <thead>
+    <tr>
+        
+        <th>Name</th>
+        
+
+        <th>Type</th>
+
+        
+
+        
+
+        <th class="last">Description</th>
+    </tr>
+    </thead>
+
+    <tbody>
+    
+
+        <tr>
+            
+                <td class="name"><code>version.full</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String" target="_blank">String</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The full semver value.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>version.major</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number" target="_blank">Number</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The major version number.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>version.minor</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number" target="_blank">Number</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The minor version number.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>version.patch</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Number" target="_blank">Number</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The patch version number.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>version.alpha</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String" target="_blank">String</a></span>
+|
+
+<span class="param-type"><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean" target="_blank">Boolean</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The alpha version value,
+otherwise <code>false</code> if the current version is not alpha.</p></td>
+        </tr>
+
+    
+
+        <tr>
+            
+                <td class="name"><code>version.beta</code></td>
+            
+
+            <td class="type">
+            
+                
+<span class="param-type"><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String" target="_blank">String</a></span>
+|
+
+<span class="param-type"><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Boolean" target="_blank">Boolean</a></span>
+
+
+
+            
+            </td>
+
+            
+
+            
+
+            <td class="description last"><p>The beta version value,
+otherwise <code>false</code> if the current version is not beta.</p></td>
+        </tr>
+
+    
+    </tbody>
+</table>
+</dl>
+
+    
+
+  
+
+    
+
+    
+
+    
+
+  
+
+  
+
+  
+
+  
+</dl>
+
+
+    
+        <div class="code-panel panel panel-warning">
+          <div class="panel-heading">
+            <strong>Examples</strong>
+          </div>
+          <div class="panel-body">
+            
+        <p class="code-caption" id="btn-ES2015 modules import">
+          <button class="btn btn-primary" onclick="loadTonic('ES2015 modules import')">Try it out</button>
+        </p>
+    
+    <pre id="pre-ES2015 modules import"><code class="javascript">import {version} from &#x27;js-data-cloud-datastore&#x27;
+console.log(version.full)</code></pre>
+    <div class="tonic" id="tonic-ES2015 modules import" style="display: none;">
+      import {version} from &#x27;js-data-cloud-datastore&#x27;
+console.log(version.full)
+    </div>
+
+        <p class="code-caption" id="btn-CommonJS import">
+          <button class="btn btn-primary" onclick="loadTonic('CommonJS import')">Try it out</button>
+        </p>
+    
+    <pre id="pre-CommonJS import"><code class="javascript">var version = require(&#x27;js-data-cloud-datastore&#x27;).version
+console.log(version.full)</code></pre>
+    <div class="tonic" id="tonic-CommonJS import" style="display: none;">
+      var version = require(&#x27;js-data-cloud-datastore&#x27;).version
+console.log(version.full)
+    </div>
+
+
+          </div>
+        </div>
+    
+</dd>
+
+        </dl>
+    
+
+    
+
+    
+
+    
+</article>
+
+</section>
+
+
+
+
+		</div>
+	</div>
+
+</div>
+</div>
+
+<div class="modal fade" id="searchResults">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title">Search results</h4>
+      </div>
+      <div class="modal-body"></div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div>
+
+<footer>
+
+	<div style="text-align:center"><a href="http://js-data.io">js-data.io</a></div>
+
+
+	<span class="copyright">
+	js-data-cloud-datastore Copyright © 2014-2016 js-data-cloud-datastore project authors
+	</span>
+
+<span class="jsdoc-message">
+	Documentation generated by <a href="https://github.com/jsdoc3/jsdoc">JSDoc 3.4.0</a>
+	
+		on 2016-06-28T11:30:24-07:00
+	
+	using the <a href="https://github.com/docstrap/docstrap">DocStrap template</a>.
+</span>
+</footer>
+
+<script src="scripts/docstrap.lib.js"></script>
+<script src="scripts/toc.js"></script>
+<!-- <script type="text/javascript" src="scripts/fulltext-search-ui.js"></script> -->
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.3.0/highlight.min.js"></script>
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.3.0/languages/javascript.min.js"></script>
+
+<script>
+$( function () {
+	$( "[id*='$']" ).each( function () {
+		var $this = $( this );
+
+		$this.attr( "id", $this.attr( "id" ).replace( "$", "__" ) );
+	} );
+
+	$( ".tutorial-section pre, .readme-section pre" ).each( function () {
+		var $this = $( this );
+
+		var example = $this.find( "code" );
+		exampleText = example.html();
+		var lang = /{@lang (.*?)}/.exec( exampleText );
+		if ( lang && lang[1] ) {
+			exampleText = exampleText.replace( lang[0], "" );
+			example.html( exampleText );
+			lang = lang[1];
+		} else {
+			var langClassMatch = example.parent()[0].className.match(/lang\-(\S+)/);
+			lang = langClassMatch ? langClassMatch[1] : "javascript";
+		}
+
+		if ( lang ) {
+
+			$this
+			.addClass( lang )
+			.addClass( "linenums" )
+			.html( example.html() );
+
+		}
+	} );
+
+	hljs.initHighlightingOnLoad();
+
+	$.catchAnchorLinks( {
+        navbarOffset: 10
+	} );
+	$( "#toc" ).toc( {
+		anchorName  : function ( i, heading, prefix ) {
+			var id = $( heading ).attr( "id" );
+			return id && id.replace(/\~/g, '-inner-').replace(/\./g, '-static-') || ( prefix + i );
+		},
+		selectors   : "#toc-content h1,#toc-content h2,#toc-content h3,#toc-content h4",
+		showAndHide : false,
+		smoothScrolling: true,
+    highlightOnScroll: true
+	} );
+
+	$( "#main span[id^='toc']" ).addClass( "toc-shim" );
+	$( '.dropdown-toggle' ).dropdown();
+
+    $( "table" ).each( function () {
+      var $this = $( this );
+      $this.addClass('table');
+    } );
+
+} );
+</script>
+
+
+
+<!--Navigation and Symbol Display-->
+
+
+<!--Google Analytics-->
+
+
+<script src="https://embed.tonicdev.com"></script>
+<script>
+  window.loadTonic = function (id) {
+    var btn = document.getElementById('btn-' + id);
+    $(btn).hide();
+    var pre = document.getElementById('pre-' + id);
+    $(pre).hide();
+    var el = document.getElementById('tonic-' + id);
+    var $el = $(el);
+    var html = $el.html();
+    $el.empty();
+    $el.show();
+    console.log(html);
+    Tonic.createNotebook({
+      element: el,
+      source: html
+    });
+  };
+</script>
+
+</body>
+</html>
