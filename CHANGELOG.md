@@ -1,3 +1,16 @@
+##### 1.0.0-rc.1 - 23 August 2016
+
+###### Breaking changes
+- Now depends on `js-data@3.0.0-rc.4` or greater
+- Switched from `gcloud` to `@google-cloud/datastore`
+
+###### Backwards compatible changes
+- Updated other dependencies
+
+##### 1.0.0-beta.2 - 28 May 2016
+
+Updated dependencies
+
 ##### 1.0.0-beta.1 - 10 May 2016
 
 ###### Breaking changes

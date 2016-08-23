@@ -20,18 +20,18 @@
 import 'babel-polyfill';
 
 import * as JSData from 'js-data';
-import JSDataAdapterTests from 'js-data-adapter-tests';
+import JSDataAdapterTests from './node_modules/js-data-adapter/dist/js-data-adapter-tests';
 import * as JSDataCloudDatastore from './src/index';
 
 const assert = global.assert = JSDataAdapterTests.assert;
 global.sinon = JSDataAdapterTests.sinon;
 
-const gcloudOpts = {
+const datastoreOpts = {
   projectId: process.env.GCLOUD_PROJECT
 };
 
 if (process.env.KEYFILE_PATH) {
-  gcloudOpts.keyFilename = process.env.KEYFILE_PATH;
+  datastoreOpts.keyFilename = process.env.KEYFILE_PATH;
 }
 
 JSDataAdapterTests.init({
@@ -40,7 +40,7 @@ JSDataAdapterTests.init({
   Adapter: JSDataCloudDatastore.CloudDatastoreAdapter,
   adapterConfig: {
     debug: false,
-    gcloudOpts: gcloudOpts
+    datastoreOpts: datastoreOpts
   },
   xfeatures: [
     'findBelongsToNested',
@@ -53,6 +53,7 @@ JSDataAdapterTests.init({
     'findAllBelongsToNested',
     'findAllBelongsToHasMany',
     'findAllBelongsToHasManyNested',
+    'findAllGroupedWhere',
     'filterOnRelations'
   ]
 });
