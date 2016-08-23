@@ -26,21 +26,21 @@ import * as JSDataCloudDatastore from './src/index';
 const assert = global.assert = JSDataAdapterTests.assert;
 global.sinon = JSDataAdapterTests.sinon;
 
-const gcloudOpts = {
+const datastoreOpts = {
   projectId: process.env.GCLOUD_PROJECT
 };
 
 if (process.env.KEYFILE_PATH) {
-  gcloudOpts.keyFilename = process.env.KEYFILE_PATH;
+  datastoreOpts.keyFilename = process.env.KEYFILE_PATH;
 }
 
 JSDataAdapterTests.init({
-  debug: true,
+  debug: false,
   JSData: JSData,
   Adapter: JSDataCloudDatastore.CloudDatastoreAdapter,
   adapterConfig: {
     debug: false,
-    gcloudOpts: gcloudOpts
+    datastoreOpts: datastoreOpts
   },
   xfeatures: [
     'findBelongsToNested',
