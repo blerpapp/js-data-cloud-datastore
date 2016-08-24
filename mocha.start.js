@@ -34,10 +34,52 @@ if (process.env.KEYFILE_PATH) {
   datastoreOpts.keyFilename = process.env.KEYFILE_PATH;
 }
 
+/**
+ * Why a slow adapter? Datastore is eventually consistent, so this reduces the
+ * flakiness of the tests.
+ */
+class SlowAdapter extends JSDataCloudDatastore.CloudDatastoreAdapter {
+  create (...args) {
+    return super.create(...args).then((result) => {
+      return new JSData.utils.Promise((resolve) => {
+        setTimeout(() => resolve(result), 500);
+      });
+    });
+  }
+  createMany (...args) {
+    return super.createMany(...args).then((result) => {
+      return new JSData.utils.Promise((resolve) => {
+        setTimeout(() => resolve(result), 500);
+      });
+    });
+  }
+  update (...args) {
+    return super.update(...args).then((result) => {
+      return new JSData.utils.Promise((resolve) => {
+        setTimeout(() => resolve(result), 500);
+      });
+    });
+  }
+  updateAll (...args) {
+    return super.updateAll(...args).then((result) => {
+      return new JSData.utils.Promise((resolve) => {
+        setTimeout(() => resolve(result), 500);
+      });
+    });
+  }
+  updateMany (...args) {
+    return super.updateMany(...args).then((result) => {
+      return new JSData.utils.Promise((resolve) => {
+        setTimeout(() => resolve(result), 500);
+      });
+    });
+  }
+}
+
 JSDataAdapterTests.init({
   debug: false,
   JSData: JSData,
-  Adapter: JSDataCloudDatastore.CloudDatastoreAdapter,
+  Adapter: SlowAdapter,
   adapterConfig: {
     debug: false,
     datastoreOpts: datastoreOpts
