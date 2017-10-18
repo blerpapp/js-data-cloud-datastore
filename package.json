@@ -1,33 +1,19 @@
 {
   "name": "@blerpapp/js-data-cloud-datastore",
   "description": "Google Cloud Datastore adapter for js-data.",
-  "version": "1.0.0-rc.2",
+  "version": "1.0.0-rc.3",
   "homepage": "https://github.com/GoogleCloudPlatform/js-data-cloud-datastore",
   "license": "Apache-2.0",
   "author": "js-data-cloud-datastore project authors",
-  "contributors": [
-    "Jason Dobry <jason.dobry@gmail.com>"
-  ],
+  "contributors": ["Jason Dobry <jason.dobry@gmail.com>"],
   "repository": {
     "type": "git",
     "url": "https://github.com/GoogleCloudPlatform/js-data-cloud-datastore.git"
   },
   "main": "./dist/js-data-cloud-datastore.js",
   "typings": "./dist/js-data-cloud-datastore.d.ts",
-  "files": [
-    "dist/",
-    "src/",
-    "AUTHORS",
-    "CONTRIBUTORS"
-  ],
-  "keywords": [
-    "data",
-    "datastore",
-    "store",
-    "database",
-    "adapter",
-    "cloud"
-  ],
+  "files": ["dist/", "src/", "AUTHORS", "CONTRIBUTORS"],
+  "keywords": ["data", "datastore", "store", "database", "adapter", "cloud"],
   "semistandard": {
     "parser": "babel-eslint",
     "globals": [
@@ -40,24 +26,24 @@
       "beforeEach",
       "afterEach"
     ],
-    "ignore": [
-      "dist/"
-    ]
+    "ignore": ["dist/"]
   },
   "babel": {
-    "presets": [
-      "es2015"
-    ]
+    "presets": ["es2015"]
   },
   "scripts": {
     "lint": "semistandard \"**/*.js\"",
-    "bundle": "rollup -c rollup.config.js -f cjs -o dist/js-data-cloud-datastore.js -m dist/js-data-cloud-datastore.js.map src/index.js && repo-tools write-version dist/js-data-cloud-datastore.js",
+    "bundle":
+      "rollup -c rollup.config.js -f cjs -o dist/js-data-cloud-datastore.js -m dist/js-data-cloud-datastore.js.map src/index.js && repo-tools write-version dist/js-data-cloud-datastore.js",
     "doc": "jsdoc -c conf.json src node_modules/js-data-adapter/src",
     "build": "npm run lint && npm run bundle",
-    "mocha": "mocha -t 20000 -R dot -r babel-core/register -r babel-polyfill mocha.start.js",
-    "cover": "nyc --require babel-core/register --require babel-polyfill --cache mocha -t 20000 -R dot mocha.start.js && nyc report --reporter=html",
+    "mocha":
+      "mocha -t 20000 -R dot -r babel-core/register -r babel-polyfill mocha.start.js",
+    "cover":
+      "nyc --require babel-core/register --require babel-polyfill --cache mocha -t 20000 -R dot mocha.start.js && nyc report --reporter=html",
     "test": "npm run build && npm run cover",
-    "release": "npm test && npm run doc && repo-tools updates && repo-tools changelog"
+    "release":
+      "npm test && npm run doc && repo-tools updates && repo-tools changelog"
   },
   "dependencies": {
     "@google-cloud/datastore": "^1.0.2",
